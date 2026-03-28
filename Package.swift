@@ -46,9 +46,6 @@ let package = Package(
             dependencies: [
                 "AppScreenshotKit"
             ],
-            resources: [
-                .copy("Resources")
-            ],
             plugins: [
                 "RegisterBezelsCommand",
                 "SwiftFormatLintCommand",
