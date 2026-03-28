@@ -87,30 +87,30 @@ extension AppScreenshotDevice: DeviceScreenViewModel {
         switch model {
         case .iPhone17ProMax, .iPhone16ProMax, .iPhone17Pro, .iPhone16Pro:
             return switch orientation {
-            case .portrait: EdgeInsets(top: 62, leading: 0, bottom: 34, trailing: 0)
+            case .portrait: EdgeInsets(top: 62, leading: 16, bottom: 34, trailing: 16)
             case .landscape: EdgeInsets(top: 0, leading: 62, bottom: 21, trailing: 62)
             }
         case .iPhoneAir, .iPhone14ProMax, .iPhone15Plus, .iPhone15ProMax, .iPhone16Plus:
             return switch orientation {
-            case .portrait: EdgeInsets(top: 59, leading: 0, bottom: 34, trailing: 0)
+            case .portrait: EdgeInsets(top: 59, leading: 16, bottom: 34, trailing: 16)
             case .landscape: EdgeInsets(top: 0, leading: 59, bottom: 21, trailing: 59)
             }
         case .iPhone14Plus, .iPhone14:
             return switch orientation {
-            case .portrait: EdgeInsets(top: 47, leading: 0, bottom: 34, trailing: 0)
+            case .portrait: EdgeInsets(top: 47, leading: 16, bottom: 34, trailing: 16)
             case .landscape: EdgeInsets(top: 0, leading: 47, bottom: 21, trailing: 47)
             }
         case .iPhone17, .iPhone16, .iPhone15, .iPhone14Pro, .iPhone15Pro:
             return switch orientation {
-            case .portrait: EdgeInsets(top: 59, leading: 0, bottom: 34, trailing: 0)
+            case .portrait: EdgeInsets(top: 59, leading: 16, bottom: 34, trailing: 16)
             case .landscape: EdgeInsets(top: 0, leading: 59, bottom: 21, trailing: 59)
             }
         case .iPad:
-            return EdgeInsets(top: 20, leading: 0, bottom: 20, trailing: 0)
+            return EdgeInsets(top: 20, leading: 20, bottom: 20, trailing: 20)
         case .iPadMini:
-            return EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0)
+            return EdgeInsets(top: 24, leading: 20, bottom: 20, trailing: 20)
         case .iPadPro13M4, .iPadPro11M4, .iPadAir13M2, .iPadAir11M2:
-            return EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0)
+            return EdgeInsets(top: 24, leading: 20, bottom: 20, trailing: 20)
         }
     }
 
