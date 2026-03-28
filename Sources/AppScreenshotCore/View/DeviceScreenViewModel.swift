@@ -12,7 +12,6 @@ import SwiftUI
 protocol DeviceScreenViewModel {
     var screenSize: CGSize { get }
     var safeAreaInsets: EdgeInsets { get }
-    var screenEdgePadding: CGFloat { get }
     var horizontalSizeClass: UserInterfaceSizeClass { get }
     var verticalSizeClass: UserInterfaceSizeClass { get }
 }
@@ -112,13 +111,6 @@ extension AppScreenshotDevice: DeviceScreenViewModel {
             return EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0)
         case .iPadPro13M4, .iPadPro11M4, .iPadAir13M2, .iPadAir11M2:
             return EdgeInsets(top: 24, leading: 0, bottom: 20, trailing: 0)
-        }
-    }
-
-    var screenEdgePadding: CGFloat {
-        switch model.category {
-        case .iPhone: 16
-        case .iPad: 20
         }
     }
 
