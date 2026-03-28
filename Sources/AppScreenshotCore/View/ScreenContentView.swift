@@ -21,44 +21,44 @@ struct ScreenContentView<Content: View>: View {
     var body: some View {
         HostingViewWrap {
             content
-                .overlay(alignment: .top) {
-                    if statusBarShown {
-                        HStack(spacing: 0) {
-                            Text("09:41")
-                                .font(.system(size: 17, weight: .semibold))
-                                .padding(.leading)
-                                .padding(.leading)
-                                .padding(.trailing, 6)
-
-                            if let dynamicIdsand = model.dynamicIdsand {
-                                Spacer()
-                                    .frame(minWidth: dynamicIdsand.size.width)
-                            } else {
-                                Spacer()
-                            }
-
-                            HStack(spacing: 7) {
-
-                                Image(systemName: "cellularbars")
-                                    .font(.system(size: 17))
-                                    .padding(.leading, 6)
-
-                                Image(systemName: "wifi")
-                                    .font(.system(size: 17))
-
-                                Image(systemName: "battery.100percent")
-                                    .font(.system(size: 17))
-                                    .padding(.trailing)
-                            }
-                            .padding(.trailing)
-                        }
-                        .foregroundStyle(.primary)
-                        .frame(height: model.safeAreaInsets.top)
-                        .ignoresSafeArea()
-                    }
-                }
         }
         .frame(width: model.screenSize.width, height: model.screenSize.height)
+        .overlay(alignment: .top) {
+            if statusBarShown {
+                HStack(spacing: 0) {
+                    Text("09:41")
+                        .font(.system(size: 17, weight: .semibold))
+                        .padding(.leading)
+                        .padding(.leading)
+                        .padding(.trailing, 6)
+
+                    if let dynamicIdsand = model.dynamicIdsand {
+                        Spacer()
+                            .frame(minWidth: dynamicIdsand.size.width)
+                    } else {
+                        Spacer()
+                    }
+
+                    HStack(spacing: 7) {
+
+                        Image(systemName: "cellularbars")
+                            .font(.system(size: 17))
+                            .padding(.leading, 6)
+
+                        Image(systemName: "wifi")
+                            .font(.system(size: 17))
+
+                        Image(systemName: "battery.100percent")
+                            .font(.system(size: 17))
+                            .padding(.trailing)
+                    }
+                    .padding(.trailing)
+                }
+                .foregroundStyle(.primary)
+                .frame(height: model.safeAreaInsets.top)
+                .ignoresSafeArea()
+            }
+        }
         #if canImport(UIKit)
             .background(Color(uiColor: .systemBackground))
         #elseif canImport(AppKit)
