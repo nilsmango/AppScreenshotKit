@@ -14,28 +14,26 @@ extension AppScreenshot {
         device: AppScreenshotDevice,
         resourceBaseURL: URL
     ) throws -> Data {
-        print("[BezelDebug] loadImageData called with URL: \(resourceBaseURL.path())")
         do {
             return try BezelImageLoader().imageData(device, resourceBaseURL: resourceBaseURL)
         } catch {
-            print("[BezelDebug] First attempt failed: \(error)")
-            let cachesDirectory = FileManager.default.urls(
-                for: .cachesDirectory,
-                in: .userDomainMask
-            )[0]
-            let cacheURL = cachesDirectory.appending(
-                path: "com.shitamori1272.AppScreenshotKit/AppleDesignResource/Bezels"
-            )
-            print("[BezelDebug] Fallback cache URL: \(cacheURL.path())")
-            print("[BezelDebug] Cache exists: \(FileManager.default.fileExists(atPath: cacheURL.path))")
-            print("[BezelDebug] URLs differ: \(cacheURL != resourceBaseURL)")
-            if cacheURL != resourceBaseURL,
-                FileManager.default.fileExists(atPath: cacheURL.path)
-            {
-                print("[BezelDebug] Trying cache fallback...")
-                return try BezelImageLoader().imageData(device, resourceBaseURL: cacheURL)
+            // On the simulator, the bundle may be partially accessible or the
+            // cachesDirectory resolves to the simulator sandbox. Derive the host
+            // Mac home from the bundle path as a fallback.
+            let bundlePath = resourceBaseURL.path()
+            if let range = bundlePath.range(of: "/Library/Developer/XCTestDevices/") {
+                let hostHome = String(bundlePath[..<range.lowerBound])
+                let hostCacheURL = URL(
+                    filePath: hostHome
+                ).appending(
+                    path: "Library/Caches/com.shitamori1272.AppScreenshotKit/AppleDesignResource/Bezels"
+                )
+                if hostCacheURL != resourceBaseURL,
+                    FileManager.default.fileExists(atPath: hostCacheURL.path)
+                {
+                    return try BezelImageLoader().imageData(device, resourceBaseURL: hostCacheURL)
+                }
             }
-            print("[BezelDebug] No fallback available, rethrowing error")
             throw error
         }
     }
