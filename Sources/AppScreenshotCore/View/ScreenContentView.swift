@@ -76,10 +76,9 @@ struct ScreenContentView<Content: View>: View {
     }
 
     private var screenEdgePadding: CGFloat {
-        switch model.category {
-        case .iPhone: 16
-        case .iPad: 20
-        }
+        // iPhones with Dynamic Island need horizontal padding for the large
+        // navigation title; iPads and older iPhones without it don't.
+        model.dynamicIdsand != nil ? 16 : 0
     }
 }
 
