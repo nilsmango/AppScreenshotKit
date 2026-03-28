@@ -10,6 +10,36 @@ import Foundation
 /// Extension that provides export functionality for App Store screenshots.
 extension AppScreenshot {
 
+    private static func loadImageData(
+        device: AppScreenshotDevice,
+        resourceBaseURL: URL
+    ) throws -> Data {
+        print("[BezelDebug] loadImageData called with URL: \(resourceBaseURL.path())")
+        do {
+            return try BezelImageLoader().imageData(device, resourceBaseURL: resourceBaseURL)
+        } catch {
+            print("[BezelDebug] First attempt failed: \(error)")
+            let cachesDirectory = FileManager.default.urls(
+                for: .cachesDirectory,
+                in: .userDomainMask
+            )[0]
+            let cacheURL = cachesDirectory.appending(
+                path: "com.shitamori1272.AppScreenshotKit/AppleDesignResource/Bezels"
+            )
+            print("[BezelDebug] Fallback cache URL: \(cacheURL.path())")
+            print("[BezelDebug] Cache exists: \(FileManager.default.fileExists(atPath: cacheURL.path))")
+            print("[BezelDebug] URLs differ: \(cacheURL != resourceBaseURL)")
+            if cacheURL != resourceBaseURL,
+                FileManager.default.fileExists(atPath: cacheURL.path)
+            {
+                print("[BezelDebug] Trying cache fallback...")
+                return try BezelImageLoader().imageData(device, resourceBaseURL: cacheURL)
+            }
+            print("[BezelDebug] No fallback available, rethrowing error")
+            throw error
+        }
+    }
+
     /// Exports screenshots based on the configured environments.
     ///
     /// This method generates screenshot images for all the device types, orientations,
@@ -31,8 +61,8 @@ extension AppScreenshot {
         return try configuration.environments().map { environment in
             let renderingStrategy: RenderingStrategy
             if let resourceBaseURL {
-                let imageData = try BezelImageLoader().imageData(
-                    environment.device,
+                let imageData = try loadImageData(
+                    device: environment.device,
                     resourceBaseURL: resourceBaseURL
                 )
                 renderingStrategy = .appleResource(imageData: imageData)

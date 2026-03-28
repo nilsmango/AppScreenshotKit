@@ -11,16 +11,29 @@ struct BezelImageLoader {
 
     func imageData(_ device: AppScreenshotDevice, resourceBaseURL: URL) throws -> Data {
         let imageFileNameCandidates = imageFileNameCandidates(device)
-        guard let filePaths = FileManager.default.subpaths(atPath: resourceBaseURL.path()),
-            let imageFilePath = filePaths.first(where: { path in
-                imageFileNameCandidates.contains(where: { name in path.hasSuffix(name) })
-            })
+        print("[BezelDebug] BezelImageLoader searching in: \(resourceBaseURL.path())")
+        print("[BezelDebug] Looking for candidates: \(imageFileNameCandidates)")
+        guard let filePaths = FileManager.default.subpaths(atPath: resourceBaseURL.path()) else {
+            print("[BezelDebug] subpaths(atPath:) returned nil for: \(resourceBaseURL.path())")
+            throw AppScreenshotKitError(
+                message:
+                    "No image file found: \(imageFileNameCandidates[0]) in \(resourceBaseURL.path())"
+            )
+        }
+        print("[BezelDebug] Found \(filePaths.count) subpaths")
+        if filePaths.isEmpty {
+            print("[BezelDebug] No subpaths found in \(resourceBaseURL.path())")
+        }
+        guard let imageFilePath = filePaths.first(where: { path in
+            imageFileNameCandidates.contains(where: { name in path.hasSuffix(name) })
+        })
         else {
             throw AppScreenshotKitError(
                 message:
                     "No image file found: \(imageFileNameCandidates[0]) in \(resourceBaseURL.path())"
             )
         }
+        print("[BezelDebug] Found match: \(imageFilePath)")
 
         return try Data(contentsOf: resourceBaseURL.appendingPathComponent(imageFilePath))
     }

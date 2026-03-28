@@ -15,15 +15,30 @@ public class AppScreenshotExporter {
 
     private static func resolveDefaultBezelURL() -> URL {
         let bundleURL = Bundle.module.bundleURL.appending(path: "AppleDesignResource/Bezels")
-        if let contents = try? FileManager.default.subpathsOfDirectory(atPath: bundleURL.path),
-            !contents.isEmpty
-        {
-            return bundleURL
+        print("[BezelDebug] Bundle.module.bundleURL: \(Bundle.module.bundleURL.path())")
+        print("[BezelDebug] Bundle bezel URL: \(bundleURL.path())")
+        print("[BezelDebug] Bundle bezel exists: \(FileManager.default.fileExists(atPath: bundleURL.path))")
+        if let contents = try? FileManager.default.subpathsOfDirectory(atPath: bundleURL.path) {
+            print("[BezelDebug] Bundle bezel contents count: \(contents.count)")
+            print("[BezelDebug] Bundle bezel contents: \(contents)")
+            if !contents.isEmpty {
+                print("[BezelDebug] Using bundle URL")
+                return bundleURL
+            }
+        } else {
+            print("[BezelDebug] Could not enumerate bundle bezel contents")
         }
         let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
-        return cachesDirectory.appending(
+        let cacheURL = cachesDirectory.appending(
             path: "com.shitamori1272.AppScreenshotKit/AppleDesignResource/Bezels"
         )
+        print("[BezelDebug] Cache URL: \(cacheURL.path())")
+        print("[BezelDebug] Cache exists: \(FileManager.default.fileExists(atPath: cacheURL.path))")
+        if let cacheContents = try? FileManager.default.subpathsOfDirectory(atPath: cacheURL.path) {
+            print("[BezelDebug] Cache contents count: \(cacheContents.count)")
+        }
+        print("[BezelDebug] Using cache URL")
+        return cacheURL
     }
 
     /// Initializes the exporter with the given export option.
