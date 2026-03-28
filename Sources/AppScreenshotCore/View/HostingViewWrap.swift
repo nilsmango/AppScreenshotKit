@@ -30,6 +30,15 @@ import SwiftUI
                 right: insets.trailing
             )
 
+            // Set layout margins so the navigation bar gets proper horizontal
+            // padding for large titles without affecting SwiftUI content layout.
+            myViewController.view.directionalLayoutMargins = NSDirectionalEdgeInsets(
+                top: 0,
+                leading: deviceModel.screenEdgePadding,
+                bottom: 0,
+                trailing: deviceModel.screenEdgePadding
+            )
+
             return myViewController
         }
 
@@ -43,6 +52,12 @@ import SwiftUI
                 left: insets.leading,
                 bottom: insets.bottom,
                 right: insets.trailing
+            )
+            uiViewController.view.directionalLayoutMargins = NSDirectionalEdgeInsets(
+                top: 0,
+                leading: deviceModel.screenEdgePadding,
+                bottom: 0,
+                trailing: deviceModel.screenEdgePadding
             )
         }
     }
