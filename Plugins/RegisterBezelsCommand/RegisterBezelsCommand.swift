@@ -32,7 +32,7 @@ struct RegisterBezelsCommand: BuildToolPlugin {
                     displayName: "Register Dummy Bezel image file",
                     executable: URL(fileURLWithPath: "/usr/bin/touch"),
                     arguments: [
-                        outputDirectoryURL.appending(path: "dummy.txt").path()
+                        outputDirectoryURL.appending(path: "dummy.txt").path(percentEncoded: false)
                     ],
                     environment: [:],
                     inputFiles: [
@@ -45,14 +45,17 @@ struct RegisterBezelsCommand: BuildToolPlugin {
             ]
         }
 
+        try? FileManager.default.removeItem(at: outputDirectoryURL)
+        try FileManager.default.createDirectory(at: outputDirectoryURL, withIntermediateDirectories: true)
+
         return [
             .buildCommand(
                 displayName: "Register Bezel images",
                 executable: URL(fileURLWithPath: "/bin/cp"),
                 arguments: [
                     "-R",
-                    bezelsDirectoryURL.path(),
-                    outputDirectoryURL.path(),
+                    bezelsDirectoryURL.path(percentEncoded: false) + "/.",
+                    outputDirectoryURL.path(percentEncoded: false),
                 ],
                 environment: [:],
                 inputFiles: [

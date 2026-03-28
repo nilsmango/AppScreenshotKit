@@ -11,7 +11,20 @@ import SwiftUI
 /// This class provides methods to export screenshots for given content types, supporting both file output and XCTest attachments.
 public class AppScreenshotExporter {
     let option: ExportOption
-    var appleDesignResourceBezelURL: URL = Bundle.module.bundleURL.appending(path: "AppleDesignResource/Bezels")
+    var appleDesignResourceBezelURL: URL
+
+    private static func resolveDefaultBezelURL() -> URL {
+        let bundleURL = Bundle.module.bundleURL.appending(path: "AppleDesignResource/Bezels")
+        if let contents = try? FileManager.default.subpathsOfDirectory(atPath: bundleURL.path),
+            !contents.isEmpty
+        {
+            return bundleURL
+        }
+        let cachesDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        return cachesDirectory.appending(
+            path: "com.shitamori1272.AppScreenshotKit/AppleDesignResource/Bezels"
+        )
+    }
 
     /// Initializes the exporter with the given export option.
     ///
@@ -20,6 +33,7 @@ public class AppScreenshotExporter {
         option: ExportOption
     ) {
         self.option = option
+        self.appleDesignResourceBezelURL = Self.resolveDefaultBezelURL()
     }
 
     /// Sets the URL for Apple Design Resource bezels.
