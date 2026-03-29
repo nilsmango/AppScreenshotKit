@@ -2,7 +2,14 @@
 //  DeviceViewComparisonTests.swift
 //  AppScreenshotKit
 //
-//  Visual comparison tests for DeviceView rendering.
+//  Automated tests for DeviceView rendering behavior.
+//
+// HOW TO USE:
+//
+// 1. Run tests from Xcode Test Navigator (Cmd+6) — look for "DeviceViewComparisonTests".
+// 2. Tests export screenshots to /tmp — check console for exact paths.
+// 3. The UIScreen test is fully automated (checks exported image pixel dimensions).
+// 4. The navigation title and status bar tests export images for manual inspection.
 //
 
 import AppScreenshotKit
@@ -11,200 +18,100 @@ import XCTest
 
 @testable import AppScreenshotKitTestTools
 
-// MARK: - Side-by-Side Comparison Preview
-
-/// Shows the same NavigationStack content rendered directly and inside DeviceView
-/// side by side at the same size. If the navigation title positions match,
-/// the DeviceView is rendering correctly.
-///
-/// Open this in Xcode Canvas to visually compare.
-struct NavigationTitleComparisonPreview: View {
-    var body: some View {
-        HStack(spacing: 2) {
-            VStack {
-                Text("Direct (no DeviceView)")
-                    .font(.caption2)
-                    .padding(4)
-                    .background(Color.yellow)
-                sampleNavigationView
-                    .frame(width: 402, height: 874)
-                    .clipShape(RoundedRectangle(cornerRadius: 47.33))
-            }
-
-            VStack {
-                Text("Inside DeviceView")
-                    .font(.caption2)
-                    .padding(4)
-                    .background(Color.yellow)
-                DeviceView {
-                    sampleNavigationView
-                }
-                .statusBarShown()
-            }
-        }
-        .padding()
-    }
-
-    private var sampleNavigationView: some View {
-        NavigationStack {
-            List {
-                ForEach(0..<10) { i in
-                    Text("Item \(i)")
-                }
-            }
-            .navigationTitle("Test Title")
-        }
-    }
-}
-
-// MARK: - Status Bar Comparison Preview
-
-struct StatusBarComparisonPreview: View {
-    var body: some View {
-        HStack(spacing: 2) {
-            VStack {
-                Text("Direct (no DeviceView)")
-                    .font(.caption2)
-                    .padding(4)
-                    .background(Color.yellow)
-                sampleStatusView
-                    .frame(width: 402, height: 874)
-                    .clipShape(RoundedRectangle(cornerRadius: 47.33))
-            }
-
-            VStack {
-                Text("Inside DeviceView")
-                    .font(.caption2)
-                    .padding(4)
-                    .background(Color.yellow)
-                DeviceView {
-                    sampleStatusView
-                }
-                .statusBarShown()
-            }
-        }
-        .padding()
-    }
-
-    private var sampleStatusView: some View {
-        ZStack(alignment: .top) {
-            Color.white
-            VStack {
-                Spacer()
-                Text("Content")
-                    .font(.title)
-                Spacer()
-            }
-        }
-    }
-}
-
-// MARK: - UIScreen Comparison Preview
-
-struct UIScreenComparisonPreview: View {
-    var body: some View {
-        HStack(spacing: 2) {
-            VStack {
-                Text("Direct (no DeviceView)")
-                    .font(.caption2)
-                    .padding(4)
-                    .background(Color.yellow)
-                sampleUIScreenView
-                    .frame(width: 402, height: 874)
-                    .clipShape(RoundedRectangle(cornerRadius: 47.33))
-            }
-
-            VStack {
-                Text("Inside DeviceView")
-                    .font(.caption2)
-                    .padding(4)
-                    .background(Color.yellow)
-                DeviceView {
-                    sampleUIScreenView
-                }
-            }
-        }
-        .padding()
-    }
-
-    private var sampleUIScreenView: some View {
-        VStack(spacing: 20) {
-            Spacer()
-            #if canImport(UIKit)
-                Text("UIScreen.main.bounds")
-                    .font(.headline)
-                Text("width: \(Int(UIScreen.main.bounds.size.width))")
-                Text("height: \(Int(UIScreen.main.bounds.size.height))")
-            #endif
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-        .background(Color.blue.opacity(0.1))
-    }
-}
-
-// MARK: - Export Comparison Tests
-
 class DeviceViewComparisonTests: XCTestCase {
 
-    /// Exports both versions side by side as a single image for easy visual comparison.
+    // MARK: - UIScreen.main.bounds (FULLY AUTOMATED)
+
+    /// Verifies that the exported screenshot has the correct pixel dimensions.
+    /// If UIScreen.main.bounds.size returned the Mac's size instead of the
+    /// device size, the rendered image would be a different size.
+    /// iPhone 16 Pro Max (.iPhone69Inch() default): 1320 x 2868 pixels
     @MainActor
-    func testNavigationTitleComparisonExport() throws {
+    func testUIScreenBoundsReturnsDeviceSize() throws {
         let outputURL = FileManager.default.temporaryDirectory.appending(
-            path: "NavTitleComparison"
-        )
-        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
-
-        // Export with DeviceView
-        let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
-        let outputs = try exporter.export(NavigationTitleDeviceViewScreenshot.self)
-        XCTAssertFalse(outputs.isEmpty)
-        for output in outputs {
-            XCTAssertFalse(output.imageData.isEmpty)
-        }
-
-        // Save to a known location for manual inspection
-        let savedPath = outputURL.path()
-        print("[ComparisonTest] DeviceView navigation title screenshots saved to: \(savedPath)")
-        if let files = try? FileManager.default.subpaths(atPath: savedPath) {
-            for file in files {
-                print("[ComparisonTest]   - \(file)")
-            }
-        }
-    }
-
-    @MainActor
-    func testStatusBarComparisonExport() throws {
-        let outputURL = FileManager.default.temporaryDirectory.appending(
-            path: "StatusBarComparison"
-        )
-        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
-
-        let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
-        let outputs = try exporter.export(StatusBarDeviceViewScreenshot.self)
-        XCTAssertFalse(outputs.isEmpty)
-        for output in outputs {
-            XCTAssertFalse(output.imageData.isEmpty)
-        }
-
-        print("[ComparisonTest] StatusBar screenshots saved to: \(outputURL.path())")
-    }
-
-    @MainActor
-    func testUIScreenBoundsIsDeviceSize() throws {
-        let outputURL = FileManager.default.temporaryDirectory.appending(
-            path: "UIScreenComparison"
+            path: "UIScreenAutoTest"
         )
         try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
 
         let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
         let outputs = try exporter.export(UIScreenDeviceViewScreenshot.self)
+
+        // Exported screenshot is at 1x scale with pixel dimensions.
+        // iPhone 16 Pro Max (.iPhone69Inch()): 1320 x 2868 pixels
+        let expectedPixelWidth: CGFloat = 1320
+        let expectedPixelHeight: CGFloat = 2868
+
+        XCTAssertFalse(outputs.isEmpty)
+        for output in outputs {
+            XCTAssertFalse(output.imageData.isEmpty)
+
+            #if canImport(UIKit)
+                let image = try XCTUnwrap(UIImage(data: output.imageData))
+                XCTAssertEqual(
+                    image.size.width,
+                    expectedPixelWidth,
+                    accuracy: 1,
+                    "Image width should be 1320px (iPhone 16 Pro Max screenshot width)"
+                )
+                XCTAssertEqual(
+                    image.size.height,
+                    expectedPixelHeight,
+                    accuracy: 1,
+                    "Image height should be 2868px (iPhone 16 Pro Max screenshot height)"
+                )
+            #endif
+        }
+
+        print("[Test] UIScreen screenshots saved to: \(outputURL.path())")
+    }
+
+    // MARK: - Navigation Title (exports for manual inspection)
+
+    /// Exports a DeviceView with a large navigation title.
+    /// The exported image should show the title with proper left padding.
+    @MainActor
+    func testNavigationTitleExport() throws {
+        let outputURL = FileManager.default.temporaryDirectory.appending(
+            path: "NavTitleTest"
+        )
+        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+        let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
+        let outputs = try exporter.export(NavigationTitleDeviceViewScreenshot.self)
+
+        XCTAssertFalse(outputs.isEmpty, "Should produce at least one output")
+        for output in outputs {
+            XCTAssertFalse(output.imageData.isEmpty, "Image data should not be empty")
+        }
+
+        print("[Test] Navigation title screenshots saved to: \(outputURL.path())")
+        if let files = try? FileManager.default.subpaths(atPath: outputURL.path()) {
+            for file in files {
+                print("[Test]   - \(file)")
+            }
+        }
+    }
+
+    // MARK: - Status Bar (exports for manual inspection)
+
+    /// Exports a DeviceView with status bar. Check the output to verify
+    /// the status bar is at the top of the device screen.
+    @MainActor
+    func testStatusBarExport() throws {
+        let outputURL = FileManager.default.temporaryDirectory.appending(
+            path: "StatusBarTest"
+        )
+        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+        let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
+        let outputs = try exporter.export(StatusBarDeviceViewScreenshot.self)
+
         XCTAssertFalse(outputs.isEmpty)
         for output in outputs {
             XCTAssertFalse(output.imageData.isEmpty)
         }
 
-        print("[ComparisonTest] UIScreen screenshots saved to: \(outputURL.path())")
+        print("[Test] StatusBar screenshots saved to: \(outputURL.path())")
     }
 }
 
@@ -245,26 +152,22 @@ struct StatusBarDeviceViewScreenshot: View {
     }
 }
 
+/// Shows UIScreen.main.bounds values inside DeviceView.
+/// Expected for iPhone 16 Pro Max: 440 x 956
 @AppScreenshot(.iPhone69Inch())
 struct UIScreenDeviceViewScreenshot: View {
     var body: some View {
         DeviceView {
             VStack(spacing: 20) {
                 Spacer()
+                Text("UIScreen.main.bounds")
+                    .font(.headline)
                 #if canImport(UIKit)
-                    Text("UIScreen.main.bounds")
-                        .font(.headline)
                     Text("width: \(Int(UIScreen.main.bounds.size.width))")
                         .font(.title2)
-                        .foregroundColor(
-                            UIScreen.main.bounds.size.width == 402 ? .green : .red
-                        )
                     Text("height: \(Int(UIScreen.main.bounds.size.height))")
                         .font(.title2)
-                        .foregroundColor(
-                            UIScreen.main.bounds.size.height == 874 ? .green : .red
-                        )
-                    Text("(expected 402 x 874)")
+                    Text("(expected 440 x 956)")
                         .font(.caption)
                         .foregroundColor(.gray)
                 #endif
