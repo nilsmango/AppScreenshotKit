@@ -55,25 +55,27 @@ struct VirtualBezelView<Content: View>: View {
     }
 }
 
-#Preview {
-    VirtualBezelView {
-        NavigationStack {
-            VStack {
-                Text("Helloworkd")
-                    .font(.largeTitle)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color.red)
+#if canImport(PreviewsMacros)
+    #Preview {
+        VirtualBezelView {
+            NavigationStack {
+                VStack {
+                    Text("Helloworkd")
+                        .font(.largeTitle)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.red)
+                }
+                .navigationTitle("Hellowold")
             }
-            .navigationTitle("Hellowold")
         }
-    }
-    .environment(
-        \.deviceModel,
-        AppScreenshotDevice(
-            orientation: .portrait,
-            color: .black,
-            model: .iPhone17
+        .environment(
+            \.deviceModel,
+            AppScreenshotDevice(
+                orientation: .portrait,
+                color: .black,
+                model: .iPhone17
+            )
         )
-    )
-    .frame(width: 600, height: 600)
-}
+        .frame(width: 600, height: 600)
+    }
+#endif

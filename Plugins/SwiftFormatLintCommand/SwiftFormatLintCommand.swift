@@ -18,10 +18,10 @@ struct SwiftFormatLintCommand: BuildToolPlugin {
                 arguments: [
                     "format",
                     "lint",
-                    ".",
+                    context.package.directoryURL.path(percentEncoded: false),
                     "--recursive",
                     "--configuration",
-                    context.package.directoryURL.appending(path: ".swift-format").path(),
+                    context.package.directoryURL.appending(path: ".swift-format").path(percentEncoded: false),
                 ],
                 environment: [:],
                 inputFiles: target.sourceModule?.sourceFiles.map { $0.url } ?? [],
