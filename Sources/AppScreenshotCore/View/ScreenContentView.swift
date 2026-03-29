@@ -13,24 +13,36 @@ struct ScreenContentView<Content: View>: View {
     let content: Content
     @Environment(\.deviceModel) var model: DeviceViewModel
     @Environment(\.statusBarShown) var statusBarShown
+    @Environment(\.screenContentExplicitFrame) var explicitFrame
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
     var body: some View {
+        if explicitFrame {
+            screenContent
+                .frame(width: model.screenSize.width, height: model.screenSize.height)
+        } else {
+            screenContent
+        }
+    }
+
+    @ViewBuilder
+    private var screenContent: some View {
         HostingViewWrap {
             content
         }
         .background {
             #if canImport(UIKit)
-                Color.clear
-                    .onAppear { UIScreenSwizzle.activate(model.screenSize) }
-                    .onDisappear { UIScreenSwizzle.deactivate() }
-                    .allowsHitTesting(false)
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear { UIScreenSwizzle.activate(proxy.size) }
+                        .onDisappear { UIScreenSwizzle.deactivate() }
+                        .allowsHitTesting(false)
+                }
             #endif
         }
-        .frame(width: model.screenSize.width, height: model.screenSize.height)
         .overlay(alignment: .top) {
             if statusBarShown {
                 HStack(spacing: 0) {

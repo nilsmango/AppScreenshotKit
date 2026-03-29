@@ -27,6 +27,11 @@ struct StatusBarShownEnvironmentKey: EnvironmentKey {
     static let defaultValue: Bool = false
 }
 
+/// Whether the ScreenContentView should use an explicit frame (for screenshot export).
+struct ScreenContentExplicitFrameEnvironmentKey: EnvironmentKey {
+    static let defaultValue: Bool = true
+}
+
 /// An environment key for storing the current AppScreenshotEnvironment.
 struct AppScreenshotEnvironmentEnvironmentKey: EnvironmentKey {
     static let defaultValue: AppScreenshotEnvironment = AppScreenshotEnvironment(
@@ -59,6 +64,13 @@ extension EnvironmentValues {
     var statusBarShown: Bool {
         get { self[StatusBarShownEnvironmentKey.self] }
         set { self[StatusBarShownEnvironmentKey.self] = newValue }
+    }
+
+    /// Whether ScreenContentView should use an explicit frame.
+    /// Set to false when the parent controls the size (e.g., inside DeviceView).
+    var screenContentExplicitFrame: Bool {
+        get { self[ScreenContentExplicitFrameEnvironmentKey.self] }
+        set { self[ScreenContentExplicitFrameEnvironmentKey.self] = newValue }
     }
 
     /// The current AppScreenshotEnvironment in the environment.

@@ -26,11 +26,10 @@ struct Bezel<Content: View>: View {
                     ScreenContentView {
                         content
                     }
-                    .scaleEffect(
-                        CGSize(
-                            width: proxy.size.width / model.deviceViewSize.width,
-                            height: proxy.size.height / model.deviceViewSize.height
-                        )
+                    .environment(\.screenContentExplicitFrame, false)
+                    .frame(
+                        width: proxy.size.width * (model.screenSize.width / model.deviceViewSize.width),
+                        height: proxy.size.height * (model.screenSize.height / model.deviceViewSize.height)
                     )
                     .position(x: proxy.frame(in: .local).midX, y: proxy.frame(in: .local).midY)
                 }
