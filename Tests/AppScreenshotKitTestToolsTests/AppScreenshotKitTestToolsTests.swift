@@ -107,7 +107,6 @@ class AppScreenshotKitTestToolsTests: XCTestCase {
         )
         let outputs = try exporter.export(TestScreenshot.self)
 
-        // Verify that outputs have the correct format
         for output in outputs {
             XCTAssertEqual(
                 output.imageFormat,
