@@ -22,6 +22,14 @@ struct ScreenContentView<Content: View>: View {
         HostingViewWrap {
             content
         }
+        .background {
+            #if canImport(UIKit)
+                Color.clear
+                    .onAppear { UIScreenSwizzle.activate(model.screenSize) }
+                    .onDisappear { UIScreenSwizzle.deactivate() }
+                    .allowsHitTesting(false)
+            #endif
+        }
         .frame(width: model.screenSize.width, height: model.screenSize.height)
         .overlay(alignment: .top) {
             if statusBarShown {
@@ -71,3 +79,74 @@ struct ScreenContentView<Content: View>: View {
         )
     }
 }
+
+#if canImport(UIKit)
+    import ObjectiveC
+    import UIKit
+
+    /// Swizzles `UIScreen.main.bounds` to return the simulated device screen size
+    /// while a DeviceView is rendering. This ensures code that reads
+    /// `UIScreen.main.bounds.size` gets the correct device dimensions.
+    private final class UIScreenSwizzle: NSObject, @unchecked Sendable {
+        static let shared = UIScreenSwizzle()
+        nonisolated(unsafe) private static var originalImp: IMP?
+        nonisolated(unsafe) private static var mainBoundsOverride: CGSize?
+        private let lock = NSLock()
+        private var refCount = 0
+
+        nonisolated(unsafe) static let swizzleBlock: @convention(block) (UIScreen) -> CGRect = {
+            screen in
+            if let override = mainBoundsOverride {
+                return CGRect(origin: .zero, size: override)
+            }
+            let fn = unsafeBitCast(originalImp, to: (@convention(c) (UIScreen, Selector) -> CGRect).self)
+            return fn(screen, #selector(getter: UIScreen.bounds))
+        }
+
+        @MainActor
+        static func activate(_ screenSize: CGSize) {
+            shared.lock.lock()
+            shared.refCount += 1
+            let isFirst = shared.refCount == 1
+            shared.lock.unlock()
+
+            mainBoundsOverride = screenSize
+            if isFirst {
+                setup()
+            }
+        }
+
+        @MainActor
+        static func deactivate() {
+            shared.lock.lock()
+            shared.refCount -= 1
+            let shouldTeardown = shared.refCount <= 0
+            if shouldTeardown { shared.refCount = 0 }
+            shared.lock.unlock()
+
+            mainBoundsOverride = nil
+            if shouldTeardown {
+                teardown()
+            }
+        }
+
+        private static func setup() {
+            guard let method = class_getInstanceMethod(
+                UIScreen.self,
+                #selector(getter: UIScreen.bounds)
+            ) else { return }
+            originalImp = method_getImplementation(method)
+            let block = imp_implementationWithBlock(swizzleBlock)
+            method_setImplementation(method, block)
+        }
+
+        private static func teardown() {
+            guard let method = class_getInstanceMethod(
+                UIScreen.self,
+                #selector(getter: UIScreen.bounds)
+            ), let orig = originalImp else { return }
+            method_setImplementation(method, orig)
+            originalImp = nil
+        }
+    }
+#endif
