@@ -18,14 +18,11 @@ import SwiftUI
         }
 
         func makeUIViewController(context: Context) -> UIViewController {
-            let myViewController = UIHostingController(
-                rootView: content.ignoresSafeArea(.container, edges: .horizontal)
-            )
+            let myViewController = UIHostingController(rootView: content)
             applySafeAreaInsets(to: myViewController, environment: context.environment)
             return myViewController
         }
 
-        /// Updates the hosted view controller's safe area insets when the device model changes.
         func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
             applySafeAreaInsets(to: uiViewController, environment: context.environment)
         }
@@ -37,10 +34,26 @@ import SwiftUI
             let insets = environment.deviceModel.safeAreaInsets
             viewController.additionalSafeAreaInsets = UIEdgeInsets(
                 top: insets.top,
-                left: 16,
+                left: 0,
                 bottom: insets.bottom,
-                right: 16
+                right: 0
             )
+
+            // Set nav bar layout margins directly for title padding,
+            // without affecting the content's safe area.
+            DispatchQueue.main.async {
+                self.applyNavBarMargins(from: viewController.view)
+            }
+        }
+
+        private func applyNavBarMargins(from view: UIView) {
+            if let navBar = view as? UINavigationBar {
+                navBar.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+                return
+            }
+            for subview in view.subviews {
+                applyNavBarMargins(from: subview)
+            }
         }
     }
 #else
