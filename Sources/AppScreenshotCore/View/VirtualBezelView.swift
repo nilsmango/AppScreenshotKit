@@ -21,7 +21,6 @@ struct VirtualBezelView<Content: View>: View {
                 ScreenContentView {
                     content
                 }
-                .environment(\.screenContentExplicitFrame, false)
 
                 RoundedRectangle(cornerRadius: model.bezelRadius, style: .continuous)
                     .inset(by: -model.bezelWidth / 2)
