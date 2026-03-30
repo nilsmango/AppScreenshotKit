@@ -18,7 +18,9 @@ import SwiftUI
         }
 
         func makeUIViewController(context: Context) -> UIViewController {
-            let myViewController = UIHostingController(rootView: content)
+            let myViewController = UIHostingController(
+                rootView: content.ignoresSafeArea(.container, edges: .horizontal)
+            )
             applySafeAreaInsets(to: myViewController, environment: context.environment)
             return myViewController
         }
