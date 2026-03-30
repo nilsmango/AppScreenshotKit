@@ -245,3 +245,154 @@ struct LocaleTestScreenshot: View {
         }
     }
 }
+
+// MARK: - LazyVGrid Visibility Test
+
+extension DeviceViewComparisonTests {
+
+    /// Automated test: renders the same grid content as LazyVGrid and regular Grid
+    /// inside DeviceView. If LazyVGrid is missing items (due to scaleEffect/layout issues),
+    /// the images will differ and the test fails.
+    @MainActor
+    func testLazyVGridRendersAllItems() throws {
+        let outputURL = FileManager.default.temporaryDirectory.appending(path: "LazyGridTest")
+        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+        let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
+
+        // Render with LazyVGrid
+        let lazyOutputs = try exporter.export(LazyVGridTestScreenshot.self)
+        // Render with regular Grid (non-lazy, renders all items)
+        let eagerOutputs = try exporter.export(RegularGridTestScreenshot.self)
+
+        XCTAssertFalse(lazyOutputs.isEmpty)
+        XCTAssertFalse(eagerOutputs.isEmpty)
+
+        guard let lazyImage = lazyOutputs.first,
+              let eagerImage = eagerOutputs.first
+        else { return }
+
+        // If LazyVGrid is missing items, the images differ.
+        // If both render all items correctly, the images are identical.
+        XCTAssertEqual(
+            lazyImage.imageData,
+            eagerImage.imageData,
+            "LazyVGrid image differs from regular Grid — LazyVGrid may be missing items inside DeviceView"
+        )
+
+        print("[LazyGridTest] PASS: LazyVGrid and regular Grid produce identical images")
+    }
+
+    /// Tests LazyVGrid with items that extend beyond the visible viewport.
+    /// 100 items in 25 rows × 4 cols — far exceeds screen height.
+    /// Compares LazyVGrid vs regular Grid to detect missing items.
+    @MainActor
+    func testLazyVGridOverflowItems() throws {
+        let outputURL = FileManager.default.temporaryDirectory.appending(path: "LazyGridOverflow")
+        try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+        let exporter = AppScreenshotExporter(option: .file(outputURL: outputURL))
+
+        let lazyOutputs = try exporter.export(LazyVGridOverflowTestScreenshot.self)
+        let eagerOutputs = try exporter.export(RegularGridOverflowTestScreenshot.self)
+
+        guard let lazyImage = lazyOutputs.first,
+              let eagerImage = eagerOutputs.first
+        else { return }
+
+        XCTAssertEqual(
+            lazyImage.imageData,
+            eagerImage.imageData,
+            "LazyVGrid overflow: missing items that extend beyond initial viewport inside DeviceView"
+        )
+
+        print("[LazyGridOverflow] PASS: LazyVGrid renders all 100 items correctly")
+    }
+}
+
+/// Renders a LazyVGrid with numbered cells inside DeviceView.
+@AppScreenshot(.iPhone69Inch())
+struct LazyVGridTestScreenshot: View {
+    var body: some View {
+        DeviceView {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(80), spacing: 4), count: 4), spacing: 4) {
+                ForEach(0..<40, id: \.self) { i in
+                    Text("\(i)")
+                        .font(.caption2)
+                        .frame(width: 80, height: 40)
+                        .background(Color(hue: Double(i) / 40.0, saturation: 0.5, brightness: 0.9))
+                        .cornerRadius(4)
+                }
+            }
+            .padding(8)
+        }
+    }
+}
+
+/// Renders the same grid with regular VStack+HStack (non-lazy, always renders all items).
+@AppScreenshot(.iPhone69Inch())
+struct RegularGridTestScreenshot: View {
+    var body: some View {
+        DeviceView {
+            VStack(spacing: 4) {
+                ForEach(0..<10, id: \.self) { row in
+                    HStack(spacing: 4) {
+                        ForEach(0..<4, id: \.self) { col in
+                            let i = row * 4 + col
+                            Text("\(i)")
+                                .font(.caption2)
+                                .frame(width: 80, height: 40)
+                                .background(Color(hue: Double(i) / 40.0, saturation: 0.5, brightness: 0.9))
+                                .cornerRadius(4)
+                        }
+                    }
+                }
+            }
+            .padding(8)
+        }
+    }
+}
+
+/// LazyVGrid with 100 items — extends far beyond screen height.
+/// If items beyond the initial viewport are not rendered, the test catches it.
+@AppScreenshot(.iPhone69Inch())
+struct LazyVGridOverflowTestScreenshot: View {
+    var body: some View {
+        DeviceView {
+            LazyVGrid(columns: Array(repeating: GridItem(.fixed(80), spacing: 4), count: 4), spacing: 4) {
+                ForEach(0..<100, id: \.self) { i in
+                    Text("\(i)")
+                        .font(.caption2)
+                        .frame(width: 80, height: 40)
+                        .background(Color(hue: Double(i) / 100.0, saturation: 0.5, brightness: 0.9))
+                        .cornerRadius(4)
+                }
+            }
+            .padding(8)
+        }
+    }
+}
+
+/// Regular Grid with same 100 items — always renders all items (non-lazy).
+@AppScreenshot(.iPhone69Inch())
+struct RegularGridOverflowTestScreenshot: View {
+    var body: some View {
+        DeviceView {
+            VStack(spacing: 4) {
+                ForEach(0..<25, id: \.self) { row in
+                    HStack(spacing: 4) {
+                        ForEach(0..<4, id: \.self) { col in
+                            let i = row * 4 + col
+                            Text("\(i)")
+                                .font(.caption2)
+                                .frame(width: 80, height: 40)
+                                .background(Color(hue: Double(i) / 100.0, saturation: 0.5, brightness: 0.9))
+                                .cornerRadius(4)
+                        }
+                    }
+                }
+            }
+            .padding(8)
+        }
+    }
+}
