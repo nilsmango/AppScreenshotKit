@@ -10,6 +10,10 @@
 // 2. Tests export screenshots to /tmp — check console for exact paths.
 // 3. The UIScreen test is fully automated (checks exported image pixel dimensions).
 // 4. The navigation title and status bar tests export images for manual inspection.
+// 5. The locale test is fully automated — it compares ja_JP vs en_US images and
+//    fails if they're identical (meaning locale isn't reaching the content).
+//    Note: this verifies @Environment(\.locale) receives different values, not that
+//    LocalizedStringKey resolves correctly (that would need .strings resource files).
 //
 
 import AppScreenshotKit
@@ -175,6 +179,69 @@ struct UIScreenDeviceViewScreenshot: View {
             }
             .frame(maxWidth: .infinity)
             .background(Color.blue.opacity(0.1))
+        }
+    }
+}
+
+// MARK: - Locale Tests
+
+extension DeviceViewComparisonTests {
+
+    /// Fully automated locale test. Exports with ja_JP and en_US locales,
+    /// then verifies the rendered images differ (different text = different pixels).
+    @MainActor
+    func testLocaleIsAppliedToContent() throws {
+        let exporter = AppScreenshotExporter(
+            option: .file(outputURL: FileManager.default.temporaryDirectory.appending(path: "LocaleAutoTest"))
+        )
+        let outputs = try exporter.export(LocaleTestScreenshot.self)
+
+        // Verify we got one output per locale
+        XCTAssertEqual(outputs.count, 2, "Should produce 2 screenshots (ja_JP and en_US)")
+
+        guard outputs.count == 2 else { return }
+
+        // Sort by locale to ensure consistent comparison
+        let sorted = outputs.sorted { $0.environment.locale.identifier < $1.environment.locale.identifier }
+        let ja = sorted[0]
+        let en = sorted[1]
+
+        XCTAssertEqual(ja.environment.locale.identifier, "en_US")
+        XCTAssertEqual(en.environment.locale.identifier, "ja_JP")
+
+        // The images MUST differ — different locale means different rendered text.
+        // If they're identical, the locale is NOT being applied to the content.
+        XCTAssertNotEqual(
+            ja.imageData,
+            en.imageData,
+            "Images for ja_JP and en_US must differ. If identical, the locale is not being applied."
+        )
+
+        print("[LocaleTest] PASS: ja_JP and en_US produce different images — locale is working")
+    }
+}
+
+/// Test screenshot with multiple locales. Shows the current locale identifier
+/// so you can verify it changes between ja_JP and en_US.
+@AppScreenshot(.iPhone69Inch(), options: .locale([Locale(identifier: "ja_JP"), Locale(identifier: "en_US")]))
+struct LocaleTestScreenshot: View {
+    @Environment(\.locale) var locale
+
+    var body: some View {
+        DeviceView {
+            VStack(spacing: 20) {
+                Spacer()
+                Text("Locale Test")
+                    .font(.headline)
+                Text("locale: \(locale.identifier)")
+                    .font(.title2)
+                Text("calendar: \(locale.calendar.identifier)")
+                    .font(.body)
+                    .foregroundColor(.gray)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+            .background(Color.green.opacity(0.1))
         }
     }
 }

@@ -6,6 +6,7 @@ import PackageDescription
 
 let package = Package(
     name: "AppScreenshotKit",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v16),
         .macOS(.v14),
@@ -45,6 +46,9 @@ let package = Package(
             name: "AppScreenshotKitTestTools",
             dependencies: [
                 "AppScreenshotKit"
+            ],
+            resources: [
+                .process("Resources")
             ],
             plugins: [
                 "RegisterBezelsCommand",

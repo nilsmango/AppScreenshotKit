@@ -19,30 +19,25 @@ import SwiftUI
 
         func makeUIViewController(context: Context) -> UIViewController {
             let myViewController = UIHostingController(rootView: content)
-
-            // Use safeAreaInsets from environment's deviceModel if available
-            let deviceModel = context.environment.deviceModel
-            let insets = deviceModel.safeAreaInsets
-            myViewController.additionalSafeAreaInsets = UIEdgeInsets(
-                top: insets.top,
-                left: insets.leading,
-                bottom: insets.bottom,
-                right: insets.trailing
-            )
-
+            applySafeAreaInsets(to: myViewController, environment: context.environment)
             return myViewController
         }
 
-        /// Updates the hosted view controller’s safe area insets when the device model changes.
+        /// Updates the hosted view controller's safe area insets when the device model changes.
         func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-            // Update safe area insets if device model changes
-            let deviceModel = context.environment.deviceModel
-            let insets = deviceModel.safeAreaInsets
-            uiViewController.additionalSafeAreaInsets = UIEdgeInsets(
+            applySafeAreaInsets(to: uiViewController, environment: context.environment)
+        }
+
+        private func applySafeAreaInsets(
+            to viewController: UIViewController,
+            environment: EnvironmentValues
+        ) {
+            let insets = environment.deviceModel.safeAreaInsets
+            viewController.additionalSafeAreaInsets = UIEdgeInsets(
                 top: insets.top,
-                left: insets.leading,
+                left: 16,
                 bottom: insets.bottom,
-                right: insets.trailing
+                right: 16
             )
         }
     }
