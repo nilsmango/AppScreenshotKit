@@ -39,11 +39,10 @@ extension AppScreenshotDevice: DeviceAppearanceViewModel {
     var deviceViewSize: CGSize {
         let logicalScreenSize = screenSize
         let imageScreenSize = appldeBezelDefinition.screenRect.size
-        let ratio =
-            (logicalScreenSize.width / imageScreenSize.width + logicalScreenSize.height
-                / imageScreenSize.height) / 2
-        let deviceWidth = appldeBezelDefinition.imageSize.width * ratio
-        let deviceHeight = appldeBezelDefinition.imageSize.height * ratio
+        let widthRatio = logicalScreenSize.width / imageScreenSize.width
+        let heightRatio = logicalScreenSize.height / imageScreenSize.height
+        let deviceWidth = appldeBezelDefinition.imageSize.width * widthRatio
+        let deviceHeight = appldeBezelDefinition.imageSize.height * heightRatio
         return CGSize(width: deviceWidth, height: deviceHeight)
     }
 
