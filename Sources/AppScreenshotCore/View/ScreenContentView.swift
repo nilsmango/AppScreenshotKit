@@ -87,7 +87,7 @@ struct ScreenContentView<Content: View>: View {
     /// Swizzles `UIScreen.main.bounds` to return the simulated device screen size
     /// while a DeviceView is rendering. This ensures code that reads
     /// `UIScreen.main.bounds.size` gets the correct device dimensions.
-    private final class UIScreenSwizzle: NSObject, @unchecked Sendable {
+    final class UIScreenSwizzle: NSObject, @unchecked Sendable {
         static let shared = UIScreenSwizzle()
         nonisolated(unsafe) private static var originalImp: IMP?
         nonisolated(unsafe) private static var mainBoundsOverride: CGSize?

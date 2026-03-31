@@ -44,7 +44,7 @@ extension AppScreenshot {
             ScaleView {
                 VStack(spacing: canvasSpace) {
                     ForEach(environments, id: \.self) { environment in
-                        screenshotView(environment: environment)
+                        previewScreenshotView(environment: environment)
                             .overlay {
                                 if configuration.tileCount > 1 {
                                     VerticalLinesView(divisionCount: configuration.tileCount)
@@ -54,6 +54,18 @@ extension AppScreenshot {
                 }
             }
         }
+    }
+
+    @MainActor
+    @ViewBuilder
+    private static func previewScreenshotView(environment: AppScreenshotEnvironment) -> some View {
+        #if canImport(UIKit)
+            PreviewUIScreenBoundsBootstrap(screenSize: environment.device.screenSize) {
+                screenshotView(environment: environment)
+            }
+        #else
+            screenshotView(environment: environment)
+        #endif
     }
 }
 
@@ -70,3 +82,32 @@ private struct PreviewLayout: Layout {
         subview.place(at: .init(x: bounds.midX, y: bounds.midY), anchor: .center, proposal: proposal)
     }
 }
+
+#if canImport(UIKit)
+    private struct PreviewUIScreenBoundsBootstrap<Content: View>: View {
+        @StateObject private var token: PreviewUIScreenBoundsToken
+        let content: Content
+
+        init(screenSize: CGSize, @ViewBuilder content: () -> Content) {
+            _token = StateObject(wrappedValue: PreviewUIScreenBoundsToken(screenSize: screenSize))
+            self.content = content()
+        }
+
+        var body: some View {
+            content
+        }
+    }
+
+    @MainActor
+    private final class PreviewUIScreenBoundsToken: ObservableObject {
+        init(screenSize: CGSize) {
+            UIScreenSwizzle.activate(screenSize)
+        }
+
+        deinit {
+            Task { @MainActor in
+                UIScreenSwizzle.deactivate()
+            }
+        }
+    }
+#endif
