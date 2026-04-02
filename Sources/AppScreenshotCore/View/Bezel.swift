@@ -18,29 +18,33 @@ struct Bezel<Content: View>: View {
     }
 
     var body: some View {
-        Image(data: bezelImageData)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .background {
-                GeometryReader { proxy in
-                    ZStack {
-                        // Prevent transparent/antialiased bezel-edge pixels from exposing
-                        // the parent screenshot background.
-                        Color.black
+        GeometryReader { proxy in
+            let bezelImage = Image(data: bezelImageData)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: proxy.size.width, height: proxy.size.height)
 
-                        ScreenContentView {
-                            content
-                        }
-                        .scaleEffect(
-                            CGSize(
-                                width: proxy.size.width / model.deviceViewSize.width,
-                                height: proxy.size.height / model.deviceViewSize.height
-                            )
-                        )
-                        .position(x: proxy.frame(in: .local).midX, y: proxy.frame(in: .local).midY)
-                    }
+            ZStack {
+                ScreenContentView {
+                    content
                 }
+                .scaleEffect(
+                    CGSize(
+                        width: proxy.size.width / model.deviceViewSize.width,
+                        height: proxy.size.height / model.deviceViewSize.height
+                    )
+                )
+                .position(x: proxy.frame(in: .local).midX, y: proxy.frame(in: .local).midY)
+
+                // Fill only where the bezel image has alpha, so fallback color
+                // does not appear as a full rectangle behind the device.
+                Color.black
+                    .mask { bezelImage }
+
+                bezelImage
             }
+        }
+        .frame(width: model.deviceViewSize.width, height: model.deviceViewSize.height)
     }
 }
 
