@@ -10,6 +10,33 @@ import SwiftUI
 #if canImport(UIKit)
     import UIKit
 
+    struct NavigationBarMarginFix: UIViewRepresentable {
+        func makeUIView(context: Context) -> UIView {
+            let view = UIView(frame: .zero)
+            view.backgroundColor = .clear
+            return view
+        }
+
+        func updateUIView(_ uiView: UIView, context: Context) {
+            DispatchQueue.main.async {
+                applyNavBarMargins(from: uiView)
+            }
+        }
+
+        private func applyNavBarMargins(from view: UIView) {
+            if let navBar = view as? UINavigationBar {
+                navBar.layoutMargins = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+                return
+            }
+            for subview in view.subviews {
+                applyNavBarMargins(from: subview)
+            }
+            if let superview = view.superview {
+                applyNavBarMargins(from: superview)
+            }
+        }
+    }
+
     /// A UIViewControllerRepresentable that wraps SwiftUI content for UIKit hosting.
     struct HostingViewWrap<Content: View>: UIViewControllerRepresentable {
         typealias UIViewControllerType = UIHostingController<Content>

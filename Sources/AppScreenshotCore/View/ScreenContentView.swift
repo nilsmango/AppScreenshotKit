@@ -13,15 +13,14 @@ struct ScreenContentView<Content: View>: View {
     let content: Content
     @Environment(\.deviceModel) var model: DeviceViewModel
     @Environment(\.statusBarShown) var statusBarShown
+    @Environment(\.isExportRendering) var isExportRendering
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
     var body: some View {
-        HostingViewWrap {
-            content
-        }
+        screenBody
         .frame(width: model.screenSize.width, height: model.screenSize.height)
         .clipped()
         .overlay(alignment: .top) {
@@ -68,6 +67,27 @@ struct ScreenContentView<Content: View>: View {
         .overlay {
             InverseRoundedRectangle(cornerRadius: model.bezelRadius)
                 .fill(.black, style: FillStyle(eoFill: true))
+        }
+    }
+
+    @ViewBuilder
+    private var screenBody: some View {
+        if isExportRendering {
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaPadding(.top, model.safeAreaInsets.top)
+                .safeAreaPadding(.leading, model.safeAreaInsets.leading)
+                .safeAreaPadding(.bottom, model.safeAreaInsets.bottom)
+                .safeAreaPadding(.trailing, model.safeAreaInsets.trailing)
+            #if canImport(UIKit)
+                .background {
+                    NavigationBarMarginFix()
+                }
+            #endif
+        } else {
+            HostingViewWrap {
+                content
+            }
         }
     }
 }

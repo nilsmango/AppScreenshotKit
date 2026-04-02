@@ -27,6 +27,11 @@ struct StatusBarShownEnvironmentKey: EnvironmentKey {
     static let defaultValue: Bool = false
 }
 
+/// An environment key that indicates when the view is being rendered for export.
+struct ExportRenderingEnvironmentKey: EnvironmentKey {
+    static let defaultValue: Bool = false
+}
+
 /// An environment key for storing the current AppScreenshotEnvironment.
 struct AppScreenshotEnvironmentEnvironmentKey: EnvironmentKey {
     static let defaultValue: AppScreenshotEnvironment = AppScreenshotEnvironment(
@@ -59,6 +64,12 @@ extension EnvironmentValues {
     var statusBarShown: Bool {
         get { self[StatusBarShownEnvironmentKey.self] }
         set { self[StatusBarShownEnvironmentKey.self] = newValue }
+    }
+
+    /// Whether the view is being rendered through the screenshot export path.
+    var isExportRendering: Bool {
+        get { self[ExportRenderingEnvironmentKey.self] }
+        set { self[ExportRenderingEnvironmentKey.self] = newValue }
     }
 
     /// The current AppScreenshotEnvironment in the environment.
