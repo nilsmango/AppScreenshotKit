@@ -50,9 +50,15 @@ import SwiftUI
             to viewController: UIHostingController<Content>,
             environment: EnvironmentValues
         ) {
+            let screenSize = environment.deviceModel.screenSize
+            viewController.preferredContentSize = screenSize
+            viewController.view.bounds = CGRect(origin: .zero, size: screenSize)
+            viewController.view.frame = CGRect(origin: .zero, size: screenSize)
             viewController.additionalSafeAreaInsets = uiEdgeInsets(
                 from: environment.deviceModel.safeAreaInsets
             )
+            viewController.view.setNeedsLayout()
+            viewController.view.layoutIfNeeded()
 
             // Set nav bar layout margins directly for title padding,
             // without affecting the content's safe area.
