@@ -75,10 +75,10 @@ struct ScreenContentView<Content: View>: View {
         if isExportRendering {
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .safeAreaPadding(.top, model.safeAreaInsets.top)
-                .safeAreaPadding(.leading, model.safeAreaInsets.leading)
-                .safeAreaPadding(.bottom, model.safeAreaInsets.bottom)
-                .safeAreaPadding(.trailing, model.safeAreaInsets.trailing)
+                .padding(.top, model.safeAreaInsets.top)
+                .padding(.leading, model.safeAreaInsets.leading)
+                .padding(.bottom, model.safeAreaInsets.bottom)
+                .padding(.trailing, model.safeAreaInsets.trailing)
             #if canImport(UIKit)
                 .background {
                     NavigationBarMarginFix()
