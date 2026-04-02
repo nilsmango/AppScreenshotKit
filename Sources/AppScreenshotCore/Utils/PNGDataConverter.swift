@@ -50,7 +50,12 @@ struct PNGDataConverter {
             let renderer = UIGraphicsImageRenderer(size: rect.size, format: format)
             let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
                 ctx.cgContext.translateBy(x: -rect.origin.x, y: -rect.origin.y)
-                view.layer.render(in: ctx.cgContext)
+                // `drawHierarchy(in:afterScreenUpdates:)` preserves SwiftUI-backed
+                // visual effects such as `.thinMaterial`, which are lost when the
+                // hierarchy is flattened through `layer.render(in:)`.
+                if !view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) {
+                    view.layer.render(in: ctx.cgContext)
+                }
             }
             switch imageFormat {
             case .png:

@@ -78,6 +78,24 @@ import XCTest
         }
 
         @MainActor
+        func testThinMaterialIsPreservedDuringSnapshotRendering() throws {
+            let image = try renderedPreviewImage(of: ThinMaterialRegressionScreenshot())
+
+            let monochromeCoverage = image.fractionOfPixels(
+                matching: { rgba in
+                    rgba.alpha > 200 && (isNearPureBlack(rgba) || isNearPureWhite(rgba))
+                },
+                in: CGRect(x: 0.32, y: 0.32, width: 0.36, height: 0.36)
+            )
+
+            XCTAssertLessThan(
+                monochromeCoverage,
+                0.85,
+                "Expected the material overlay to soften the checkerboard background instead of flattening to pure black/white pixels."
+            )
+        }
+
+        @MainActor
         private func renderedPreviewImage<Content: View>(of view: Content) throws -> UIImage {
             let data = try PNGDataConverter().convert(view)
             return try XCTUnwrap(UIImage(data: data))
@@ -226,6 +244,45 @@ import XCTest
                 min(limit, Int(CGFloat(limit) * (origin + length)))
             )
             return lowerBound..<upperBound
+        }
+    }
+
+    private func isNearPureBlack(_ rgba: UIImage.RGBA) -> Bool {
+        rgba.red < 32 && rgba.green < 32 && rgba.blue < 32
+    }
+
+    private func isNearPureWhite(_ rgba: UIImage.RGBA) -> Bool {
+        rgba.red > 223 && rgba.green > 223 && rgba.blue > 223
+    }
+
+    private struct ThinMaterialRegressionScreenshot: View {
+        var body: some View {
+            ZStack {
+                checkerboard
+
+                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                    .fill(.thinMaterial)
+                    .frame(width: 160, height: 160)
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .stroke(Color.white.opacity(0.75), lineWidth: 2)
+                    }
+            }
+            .frame(width: 240, height: 240)
+            .background(Color.white)
+        }
+
+        private var checkerboard: some View {
+            VStack(spacing: 0) {
+                ForEach(0..<12, id: \.self) { row in
+                    HStack(spacing: 0) {
+                        ForEach(0..<12, id: \.self) { col in
+                            Rectangle()
+                                .fill((row + col).isMultiple(of: 2) ? Color.black : Color.white)
+                        }
+                    }
+                }
+            }
         }
     }
 #endif
