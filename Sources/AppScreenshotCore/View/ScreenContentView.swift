@@ -22,14 +22,6 @@ struct ScreenContentView<Content: View>: View {
         HostingViewWrap {
             content
         }
-        .background {
-            #if canImport(UIKit)
-                Color.clear
-                    .onAppear { UIScreenSwizzle.activate(model.screenSize) }
-                    .onDisappear { UIScreenSwizzle.deactivate() }
-                    .allowsHitTesting(false)
-            #endif
-        }
         .frame(width: model.screenSize.width, height: model.screenSize.height)
         .overlay(alignment: .top) {
             if statusBarShown {
@@ -112,6 +104,14 @@ struct ScreenContentView<Content: View>: View {
 
             mainBoundsOverride = screenSize
             if isFirst {
+                setup()
+            }
+        }
+
+        @MainActor
+        static func update(_ screenSize: CGSize) {
+            mainBoundsOverride = screenSize
+            if originalImp == nil {
                 setup()
             }
         }

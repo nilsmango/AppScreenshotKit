@@ -79,7 +79,11 @@ private struct PreviewLayout: Layout {
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         guard let subview = subviews.first else { return }
-        subview.place(at: .init(x: bounds.midX, y: bounds.midY), anchor: .center, proposal: proposal)
+        subview.place(
+            at: .init(x: bounds.midX, y: bounds.midY),
+            anchor: .center,
+            proposal: ProposedViewSize(bounds.size)
+        )
     }
 }
 

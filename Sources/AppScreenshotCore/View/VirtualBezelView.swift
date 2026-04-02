@@ -18,6 +18,10 @@ struct VirtualBezelView<Content: View>: View {
     var body: some View {
         ScaleView {
             ZStack(alignment: .center) {
+                RoundedRectangle(cornerRadius: model.bezelRadius, style: .continuous)
+                    .fill(.black)
+                    .frame(width: model.screenSize.width, height: model.screenSize.height)
+
                 ScreenContentView {
                     content
                 }

@@ -71,7 +71,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AppScreenshotKitTests",
-            dependencies: ["AppScreenshotKit"]
+            dependencies: ["AppScreenshotKit", "AppScreenshotCore"]
         ),
         .testTarget(
             name: "AppScreenshotKitTestToolsTests",
