@@ -31,22 +31,19 @@ struct PNGDataConverter {
             view.frame = CGRect(origin: .zero, size: targetSize)
             view.backgroundColor = .clear
 
-            let window = UIWindow()
-            window.frame = CGRect(origin: .zero, size: targetSize)
-            if let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState != .unattached })
-            {
-                window.windowScene = scene
+            let mountedHost = mountHostView(
+                controllerView: view,
+                targetSize: targetSize
+            )
+            defer {
+                mountedHost.teardown()
             }
-            window.rootViewController = controller
-            window.makeKeyAndVisible()
 
             view.sizeToFit()
             view.setNeedsLayout()
             view.layoutIfNeeded()
-            window.setNeedsLayout()
-            window.layoutIfNeeded()
+            mountedHost.window.setNeedsLayout()
+            mountedHost.window.layoutIfNeeded()
 
             // Give UIKit's render server a chance to commit the visual-effect tree
             // before snapshotting; otherwise drawHierarchy can fail and material
@@ -62,10 +59,8 @@ struct PNGDataConverter {
             let renderer = UIGraphicsImageRenderer(size: renderRect.size, format: format)
             let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
                 ctx.cgContext.translateBy(x: -renderRect.origin.x, y: -renderRect.origin.y)
-                // UIKit recommends snapshotting the entire UIWindow when visual
-                // effects are present. Falling back to the hosted view keeps
-                // older/non-scene-backed contexts working.
-                if !window.drawHierarchy(in: window.bounds, afterScreenUpdates: true),
+                if (mountedHost.usesDedicatedWindow
+                    && !mountedHost.window.drawHierarchy(in: mountedHost.window.bounds, afterScreenUpdates: true)),
                     !view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
                 {
                     view.layer.render(in: ctx.cgContext)
@@ -105,4 +100,90 @@ struct PNGDataConverter {
             return data
         #endif
     }
+
+    #if canImport(UIKit)
+        private func mountHostView(
+            controllerView: UIView,
+            targetSize: CGSize
+        ) -> MountedHostView {
+            if let existingWindow = activeHostWindow() {
+                let container = UIView(frame: CGRect(x: 10_000, y: 10_000, width: targetSize.width, height: targetSize.height))
+                container.backgroundColor = .clear
+                container.clipsToBounds = false
+                controllerView.frame = container.bounds
+                controllerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                container.addSubview(controllerView)
+                existingWindow.addSubview(container)
+                return MountedHostView(
+                    window: existingWindow,
+                    containerView: container,
+                    usesDedicatedWindow: false
+                )
+            }
+
+            let window = UIWindow()
+            window.frame = CGRect(origin: .zero, size: targetSize)
+            if let scene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState != .unattached })
+            {
+                window.windowScene = scene
+            }
+            let rootController = UIViewController()
+            rootController.view.backgroundColor = .clear
+            rootController.view.frame = window.bounds
+            window.rootViewController = rootController
+            window.makeKeyAndVisible()
+
+            controllerView.frame = rootController.view.bounds
+            controllerView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+            rootController.view.addSubview(controllerView)
+
+            return MountedHostView(
+                window: window,
+                containerView: rootController.view,
+                usesDedicatedWindow: true
+            )
+        }
+
+        private func activeHostWindow() -> UIWindow? {
+            UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .sorted { lhs, rhs in
+                    activationRank(lhs.activationState) < activationRank(rhs.activationState)
+                }
+                .flatMap(\.windows)
+                .first { !$0.isHidden && $0.rootViewController != nil }
+        }
+
+        private func activationRank(_ state: UIScene.ActivationState) -> Int {
+            switch state {
+            case .foregroundActive:
+                0
+            case .foregroundInactive:
+                1
+            case .background:
+                2
+            case .unattached:
+                3
+            @unknown default:
+                4
+            }
+        }
+
+        private struct MountedHostView {
+            let window: UIWindow
+            let containerView: UIView
+            let usesDedicatedWindow: Bool
+
+            func teardown() {
+                if usesDedicatedWindow {
+                    window.isHidden = true
+                    window.rootViewController = nil
+                } else {
+                    containerView.removeFromSuperview()
+                }
+            }
+        }
+    #endif
 }
