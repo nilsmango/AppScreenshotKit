@@ -26,7 +26,8 @@ struct Bezel<Content: View>: View {
                     ZStack {
                         // Fill the screen plane so rounded screen corners never reveal
                         // the outer screenshot background.
-                        Color.black
+                        RoundedRectangle(cornerRadius: model.bezelRadius, style: .continuous)
+                            .fill(.black)
                             .frame(width: model.screenSize.width, height: model.screenSize.height)
                             .scaleEffect(
                                 CGSize(
