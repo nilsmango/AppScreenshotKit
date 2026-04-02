@@ -7,10 +7,6 @@
 
 import SwiftUI
 
-#if canImport(UIKit)
-    import QuartzCore
-#endif
-
 @MainActor
 struct PNGDataConverter {
     /// Convert a SwiftUI view to image data in the specified format
@@ -28,45 +24,33 @@ struct PNGDataConverter {
             let view = controller.view!
             let targetSize = controller.view.intrinsicContentSize
             view.bounds = CGRect(origin: .zero, size: targetSize)
-            view.frame = CGRect(origin: .zero, size: targetSize)
             view.backgroundColor = .clear
 
             let window = UIWindow()
             window.frame = CGRect(origin: .zero, size: targetSize)
-            if let scene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState != .unattached })
-            {
-                window.windowScene = scene
-            }
             window.rootViewController = controller
             window.makeKeyAndVisible()
 
             view.sizeToFit()
             view.setNeedsLayout()
             view.layoutIfNeeded()
-            window.setNeedsLayout()
-            window.layoutIfNeeded()
 
-            // Give UIKit's render server a chance to commit the visual-effect tree
-            // before snapshotting; otherwise drawHierarchy can fail and material
-            // falls back to layer.render(in:), which drops the effect entirely.
-            CATransaction.flush()
-            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-            CATransaction.flush()
-
-            let renderRect = rect ?? CGRect(origin: .zero, size: targetSize)
+            // Move the view far off-screen before rendering.
+            // This is intentional: positioning the view away from (0, 0) avoids
+            // transient layout/animation artifacts and composition glitches that
+            // can occur when rendering SwiftUI content into a UIKit-backed window,
+            // particularly with newer Xcode / iOS toolchains (e.g. Xcode 26).
+            // Do not change this without re-validating screenshot output.
+            view.frame.origin = .init(x: 10_000, y: 10_000)
             let format = UIGraphicsImageRendererFormat()
             format.scale = scale
             format.opaque = false
-            let renderer = UIGraphicsImageRenderer(size: renderRect.size, format: format)
+
+            let rect = rect ?? CGRect(origin: .zero, size: targetSize)
+            let renderer = UIGraphicsImageRenderer(size: rect.size, format: format)
             let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
-                ctx.cgContext.translateBy(x: -renderRect.origin.x, y: -renderRect.origin.y)
-                if !window.drawHierarchy(in: window.bounds, afterScreenUpdates: true),
-                    !view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
-                {
-                    view.layer.render(in: ctx.cgContext)
-                }
+                ctx.cgContext.translateBy(x: -rect.origin.x, y: -rect.origin.y)
+                view.layer.render(in: ctx.cgContext)
             }
             switch imageFormat {
             case .png:

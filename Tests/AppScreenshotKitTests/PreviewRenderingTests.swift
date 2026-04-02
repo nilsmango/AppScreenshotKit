@@ -78,41 +78,6 @@ import XCTest
         }
 
         @MainActor
-        func testThinMaterialIsPreservedDuringSnapshotRendering() throws {
-            let device = AppScreenshotDevice(
-                orientation: .portrait,
-                color: .black,
-                model: .iPhone16Pro
-            )
-
-            let withMaterial = try renderedPreviewImage(
-                of: DeviceView {
-                    ThinMaterialRegressionContent(includesMaterial: true)
-                        .preferredColorScheme(.dark)
-                }
-                .environment(\.deviceModel, device)
-            )
-            let withoutMaterial = try renderedPreviewImage(
-                of: DeviceView {
-                    ThinMaterialRegressionContent(includesMaterial: false)
-                        .preferredColorScheme(.dark)
-                }
-                .environment(\.deviceModel, device)
-            )
-
-            let materialDifference = withMaterial.meanAbsoluteChannelDifference(
-                to: withoutMaterial,
-                in: CGRect(x: 0.18, y: 0.34, width: 0.64, height: 0.32)
-            )
-
-            XCTAssertGreaterThan(
-                materialDifference,
-                8,
-                "Expected the material background to change the rendered pixels."
-            )
-        }
-
-        @MainActor
         private func renderedPreviewImage<Content: View>(of view: Content) throws -> UIImage {
             let data = try PNGDataConverter().convert(view)
             return try XCTUnwrap(UIImage(data: data))
@@ -254,77 +219,6 @@ import XCTest
             return Double(matches) / Double(total)
         }
 
-        func meanAbsoluteChannelDifference(
-            to other: UIImage,
-            in normalizedRect: CGRect
-        ) -> Double {
-            guard let cgImage, let otherCgImage = other.cgImage else { return 0 }
-            guard cgImage.width == otherCgImage.width, cgImage.height == otherCgImage.height else {
-                return 0
-            }
-
-            let width = cgImage.width
-            let height = cgImage.height
-            let bytesPerPixel = 4
-            let bytesPerRow = bytesPerPixel * width
-            var pixels = [UInt8](repeating: 0, count: height * bytesPerRow)
-            var otherPixels = [UInt8](repeating: 0, count: height * bytesPerRow)
-
-            guard
-                let context = CGContext(
-                    data: &pixels,
-                    width: width,
-                    height: height,
-                    bitsPerComponent: 8,
-                    bytesPerRow: bytesPerRow,
-                    space: CGColorSpaceCreateDeviceRGB(),
-                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-                ),
-                let otherContext = CGContext(
-                    data: &otherPixels,
-                    width: width,
-                    height: height,
-                    bitsPerComponent: 8,
-                    bytesPerRow: bytesPerRow,
-                    space: CGColorSpaceCreateDeviceRGB(),
-                    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
-                )
-            else {
-                return 0
-            }
-
-            context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-            otherContext.draw(otherCgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
-
-            let xRange = normalizedPixelRange(
-                origin: normalizedRect.minX,
-                length: normalizedRect.width,
-                limit: width
-            )
-            let yRange = normalizedPixelRange(
-                origin: normalizedRect.minY,
-                length: normalizedRect.height,
-                limit: height
-            )
-
-            var totalDifference: Double = 0
-            var sampleCount = 0
-
-            for y in yRange {
-                for x in xRange {
-                    let offset = (y * bytesPerRow) + (x * bytesPerPixel)
-                    let deltaRed = abs(Int(pixels[offset]) - Int(otherPixels[offset]))
-                    let deltaGreen = abs(Int(pixels[offset + 1]) - Int(otherPixels[offset + 1]))
-                    let deltaBlue = abs(Int(pixels[offset + 2]) - Int(otherPixels[offset + 2]))
-                    totalDifference += Double(deltaRed + deltaGreen + deltaBlue) / 3.0
-                    sampleCount += 1
-                }
-            }
-
-            guard sampleCount > 0 else { return 0 }
-            return totalDifference / Double(sampleCount)
-        }
-
         private func normalizedPixelRange(origin: CGFloat, length: CGFloat, limit: Int) -> Range<Int> {
             let lowerBound = max(0, min(limit - 1, Int(CGFloat(limit) * origin)))
             let upperBound = max(
@@ -332,57 +226,6 @@ import XCTest
                 min(limit, Int(CGFloat(limit) * (origin + length)))
             )
             return lowerBound..<upperBound
-        }
-    }
-
-    private struct ThinMaterialRegressionContent: View {
-        let includesMaterial: Bool
-
-        var body: some View {
-            ZStack {
-                checkerboardBackground
-
-                overlayCard
-            }
-            .frame(width: 240, height: 240)
-        }
-
-        private var overlayCard: some View {
-            HStack(spacing: 10) {
-                Circle()
-                    .fill(Color.primary)
-                    .frame(width: 18, height: 18)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Material")
-                        .font(.system(size: 18, weight: .semibold))
-                    Text("Snapshot")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .frame(width: 186)
-            .background(
-                includesMaterial ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.clear),
-                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
-            )
-        }
-
-        private var checkerboardBackground: some View {
-            VStack(spacing: 0) {
-                ForEach(0..<12, id: \.self) { row in
-                    HStack(spacing: 0) {
-                        ForEach(0..<12, id: \.self) { col in
-                            Rectangle()
-                                .fill((row + col).isMultiple(of: 2) ? Color.black : Color.white)
-                        }
-                    }
-                }
-            }
         }
     }
 #endif

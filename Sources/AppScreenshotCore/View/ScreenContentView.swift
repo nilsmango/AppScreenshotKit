@@ -13,16 +13,16 @@ struct ScreenContentView<Content: View>: View {
     let content: Content
     @Environment(\.deviceModel) var model: DeviceViewModel
     @Environment(\.statusBarShown) var statusBarShown
-    @Environment(\.isExportRendering) var isExportRendering
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
 
     var body: some View {
-        screenBody
+        HostingViewWrap {
+            content
+        }
         .frame(width: model.screenSize.width, height: model.screenSize.height)
-        .clipped()
         .overlay(alignment: .top) {
             if statusBarShown {
                 HStack(spacing: 0) {
@@ -64,45 +64,11 @@ struct ScreenContentView<Content: View>: View {
         #elseif canImport(AppKit)
             .background(Color(NSColor.windowBackgroundColor))
         #endif
-        .overlay {
-            InverseRoundedRectangle(cornerRadius: model.bezelRadius)
-                .fill(.black, style: FillStyle(eoFill: true))
-        }
-    }
-
-    @ViewBuilder
-    private var screenBody: some View {
-        if isExportRendering {
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.top, model.safeAreaInsets.top)
-                .padding(.leading, model.safeAreaInsets.leading)
-                .padding(.bottom, model.safeAreaInsets.bottom)
-                .padding(.trailing, model.safeAreaInsets.trailing)
-            #if canImport(UIKit)
-                .background {
-                    NavigationBarMarginFix()
-                }
-            #endif
-        } else {
-            HostingViewWrap {
-                content
-            }
-        }
-    }
-}
-
-private struct InverseRoundedRectangle: Shape {
-    let cornerRadius: CGFloat
-
-    func path(in rect: CGRect) -> Path {
-        var path = Path()
-        path.addRect(rect)
-        path.addRoundedRect(
-            in: rect,
-            cornerSize: CGSize(width: cornerRadius, height: cornerRadius)
+        .clipShape(
+            RoundedRectangle(
+                cornerRadius: model.bezelRadius
+            )
         )
-        return path
     }
 }
 

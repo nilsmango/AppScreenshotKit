@@ -71,7 +71,6 @@ extension AppScreenshot {
             // Create an image renderer with the content
             let content = screenshotView(environment: environment)
                 .environment(\.renderingStrategy, renderingStrategy)
-                .environment(\.isExportRendering, true)
 
             let outputs: [AppScreenshotOutput] = try Array(0..<environment.tileCount)
                 .compactMap { index in
