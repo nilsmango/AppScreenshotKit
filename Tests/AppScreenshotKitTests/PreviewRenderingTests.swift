@@ -79,11 +79,25 @@ import XCTest
 
         @MainActor
         func testThinMaterialIsPreservedDuringSnapshotRendering() throws {
+            let device = AppScreenshotDevice(
+                orientation: .portrait,
+                color: .black,
+                model: .iPhone16Pro
+            )
+
             let withMaterial = try renderedPreviewImage(
-                of: ThinMaterialRegressionScreenshot(includesMaterial: true)
+                of: DeviceView {
+                    ThinMaterialRegressionContent(includesMaterial: true)
+                        .preferredColorScheme(.dark)
+                }
+                .environment(\.deviceModel, device)
             )
             let withoutMaterial = try renderedPreviewImage(
-                of: ThinMaterialRegressionScreenshot(includesMaterial: false)
+                of: DeviceView {
+                    ThinMaterialRegressionContent(includesMaterial: false)
+                        .preferredColorScheme(.dark)
+                }
+                .environment(\.deviceModel, device)
             )
 
             let materialDifference = withMaterial.meanAbsoluteChannelDifference(
@@ -321,7 +335,7 @@ import XCTest
         }
     }
 
-    private struct ThinMaterialRegressionScreenshot: View {
+    private struct ThinMaterialRegressionContent: View {
         let includesMaterial: Bool
 
         var body: some View {
@@ -352,16 +366,10 @@ import XCTest
             .padding(.horizontal, 16)
             .padding(.vertical, 14)
             .frame(width: 186)
-            .background {
-                if includesMaterial {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(.thinMaterial)
-                } else {
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(Color.clear)
-                }
-            }
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .background(
+                includesMaterial ? AnyShapeStyle(.thinMaterial) : AnyShapeStyle(Color.clear),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
         }
 
         private var checkerboardBackground: some View {

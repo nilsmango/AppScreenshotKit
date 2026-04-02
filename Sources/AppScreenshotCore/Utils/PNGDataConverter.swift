@@ -53,11 +53,10 @@ struct PNGDataConverter {
                 view.setNeedsLayout()
                 view.layoutIfNeeded()
 
+                let renderRect = rect ?? CGRect(origin: .zero, size: targetSize)
                 let format = UIGraphicsImageRendererFormat()
                 format.scale = scale
                 format.opaque = false
-
-                let renderRect = rect ?? CGRect(origin: .zero, size: targetSize)
                 let renderer = UIGraphicsImageRenderer(size: renderRect.size, format: format)
                 let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
                     ctx.cgContext.translateBy(x: -renderRect.origin.x, y: -renderRect.origin.y)
@@ -98,7 +97,6 @@ struct PNGDataConverter {
             return data
         #endif
     }
-
     #if canImport(UIKit)
         private func imageData(
             from image: UIImage,

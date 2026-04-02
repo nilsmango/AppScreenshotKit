@@ -64,11 +64,24 @@ struct ScreenContentView<Content: View>: View {
         #elseif canImport(AppKit)
             .background(Color(NSColor.windowBackgroundColor))
         #endif
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: model.bezelRadius
-            )
+        .overlay {
+            InverseRoundedRectangle(cornerRadius: model.bezelRadius)
+                .fill(.black, style: FillStyle(eoFill: true))
+        }
+    }
+}
+
+private struct InverseRoundedRectangle: Shape {
+    let cornerRadius: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.addRect(rect)
+        path.addRoundedRect(
+            in: rect,
+            cornerSize: CGSize(width: cornerRadius, height: cornerRadius)
         )
+        return path
     }
 }
 
