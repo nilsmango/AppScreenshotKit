@@ -24,9 +24,6 @@ import SwiftUI
             activateUIScreenSwizzle(environment: context.environment)
             let hostingController = UIHostingController(rootView: content)
             hostingController.view.backgroundColor = .clear
-            if #available(iOS 16.4, *) {
-                hostingController.safeAreaRegions = []
-            }
             applySafeAreaInsets(to: hostingController, environment: context.environment)
             return hostingController
         }

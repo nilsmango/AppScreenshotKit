@@ -40,19 +40,22 @@ extension AppScreenshot {
         let preferredPreviewWidth = actualWidth * preferredPreviewScale
         let preferredPreviewHeight = actualHeight * preferredPreviewScale
 
-        return PreviewLayout(preferredSize: CGSize(width: preferredPreviewWidth, height: preferredPreviewHeight)) {
-            ScaleView {
-                VStack(spacing: canvasSpace) {
-                    ForEach(environments, id: \.self) { environment in
-                        previewScreenshotView(environment: environment)
-                            .overlay {
-                                if configuration.tileCount > 1 {
-                                    VerticalLinesView(divisionCount: configuration.tileCount)
+        return ScrollView([.horizontal, .vertical]) {
+            PreviewLayout(preferredSize: CGSize(width: preferredPreviewWidth, height: preferredPreviewHeight)) {
+                ScaleView {
+                    VStack(spacing: canvasSpace) {
+                        ForEach(environments, id: \.self) { environment in
+                            previewScreenshotView(environment: environment)
+                                .overlay {
+                                    if configuration.tileCount > 1 {
+                                        VerticalLinesView(divisionCount: configuration.tileCount)
+                                    }
                                 }
-                            }
+                        }
                     }
                 }
             }
+            .frame(width: preferredPreviewWidth, height: preferredPreviewHeight)
         }
     }
 
