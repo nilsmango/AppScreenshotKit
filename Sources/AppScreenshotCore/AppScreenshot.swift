@@ -32,7 +32,23 @@ extension AppScreenshot {
     /// - Parameter environment: The environment context for the screenshot.
     /// - Returns: A configured view ready for screenshot rendering.
     @MainActor static func screenshotView(environment: AppScreenshotEnvironment) -> some View {
-        return body(environment: environment)
+        screenshotRootView(environment: environment)
+    }
+
+    @MainActor
+    @ViewBuilder
+    private static func screenshotRootView(environment: AppScreenshotEnvironment) -> some View {
+        #if canImport(UIKit)
+            UIScreenBoundsBootstrap(screenSize: environment.device.screenSize) {
+                screenshotBodyView(environment: environment)
+            }
+        #else
+            screenshotBodyView(environment: environment)
+        #endif
+    }
+
+    @MainActor static func screenshotBodyView(environment: AppScreenshotEnvironment) -> some View {
+        body(environment: environment)
             .frame(
                 width: environment.canvasSize.width,
                 height: environment.canvasSize.height
@@ -50,3 +66,34 @@ extension AppScreenshot {
             )
     }
 }
+
+#if canImport(UIKit)
+    import UIKit
+
+    struct UIScreenBoundsBootstrap<Content: View>: View {
+        @StateObject private var token: UIScreenBoundsToken
+        let content: Content
+
+        init(screenSize: CGSize, @ViewBuilder content: () -> Content) {
+            _token = StateObject(wrappedValue: UIScreenBoundsToken(screenSize: screenSize))
+            self.content = content()
+        }
+
+        var body: some View {
+            content
+        }
+    }
+
+    @MainActor
+    final class UIScreenBoundsToken: ObservableObject {
+        init(screenSize: CGSize) {
+            UIScreenSwizzle.activate(screenSize)
+        }
+
+        deinit {
+            Task { @MainActor in
+                UIScreenSwizzle.deactivate()
+            }
+        }
+    }
+#endif

@@ -27,48 +27,50 @@ extension AppScreenshot {
             environments = environments.filter(predicate)
         }
 
-        let maxPreviewWidth = 2000.0
-        let maxPreviewHeight = 2000.0
         let canvasSpace: CGFloat = 50.0
+        let previewPadding: CGFloat = 20.0
 
         let actualWidth = environments.map(\.canvasSize.width).max() ?? 0
         let actualHeight =
             environments.map(\.canvasSize.height).reduce(0, +) + (canvasSpace * CGFloat(environments.count - 1))
 
-        let preferredPreviewScale = min(maxPreviewWidth / actualWidth, maxPreviewHeight / actualHeight, 1)
+        return GeometryReader { proxy in
+            let availableWidth = max(proxy.size.width - (previewPadding * 2), 1)
+            let previewScale = min(availableWidth / actualWidth, 1)
+            let scaledWidth = actualWidth * previewScale
+            let scaledHeight = actualHeight * previewScale
 
-        let preferredPreviewWidth = actualWidth * preferredPreviewScale
-        let preferredPreviewHeight = actualHeight * preferredPreviewScale
-
-        return ScrollView([.horizontal, .vertical]) {
-            PreviewLayout(preferredSize: CGSize(width: preferredPreviewWidth, height: preferredPreviewHeight)) {
-                ScaleView {
-                    VStack(spacing: canvasSpace) {
-                        ForEach(environments, id: \.self) { environment in
-                            previewScreenshotView(environment: environment)
-                                .overlay {
-                                    if configuration.tileCount > 1 {
-                                        VerticalLinesView(divisionCount: configuration.tileCount)
+            ScrollView {
+                VStack(spacing: 0) {
+                    PreviewLayout(preferredSize: CGSize(width: actualWidth, height: actualHeight)) {
+                        VStack(spacing: canvasSpace) {
+                            ForEach(environments, id: \.self) { environment in
+                                previewScreenshotView(environment: environment)
+                                    .overlay {
+                                        if configuration.tileCount > 1 {
+                                            VerticalLinesView(divisionCount: configuration.tileCount)
+                                        }
                                     }
-                                }
+                            }
                         }
                     }
+                    .scaleEffect(previewScale, anchor: .top)
+                    .frame(width: scaledWidth, height: scaledHeight, alignment: .top)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .padding(.horizontal, previewPadding)
+                    .padding(.vertical, previewPadding)
                 }
+                .frame(maxWidth: .infinity)
             }
-            .frame(width: preferredPreviewWidth, height: preferredPreviewHeight)
+            .scrollIndicators(.visible)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
     @MainActor
     @ViewBuilder
     private static func previewScreenshotView(environment: AppScreenshotEnvironment) -> some View {
-        #if canImport(UIKit)
-            PreviewUIScreenBoundsBootstrap(screenSize: environment.device.screenSize) {
-                screenshotView(environment: environment)
-            }
-        #else
-            screenshotView(environment: environment)
-        #endif
+        screenshotView(environment: environment)
     }
 }
 
@@ -77,7 +79,7 @@ private struct PreviewLayout: Layout {
     let preferredSize: CGSize
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
-        return preferredSize
+        preferredSize
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
@@ -85,36 +87,7 @@ private struct PreviewLayout: Layout {
         subview.place(
             at: .init(x: bounds.midX, y: bounds.midY),
             anchor: .center,
-            proposal: ProposedViewSize(bounds.size)
+            proposal: ProposedViewSize(preferredSize)
         )
     }
 }
-
-#if canImport(UIKit)
-    private struct PreviewUIScreenBoundsBootstrap<Content: View>: View {
-        @StateObject private var token: PreviewUIScreenBoundsToken
-        let content: Content
-
-        init(screenSize: CGSize, @ViewBuilder content: () -> Content) {
-            _token = StateObject(wrappedValue: PreviewUIScreenBoundsToken(screenSize: screenSize))
-            self.content = content()
-        }
-
-        var body: some View {
-            content
-        }
-    }
-
-    @MainActor
-    private final class PreviewUIScreenBoundsToken: ObservableObject {
-        init(screenSize: CGSize) {
-            UIScreenSwizzle.activate(screenSize)
-        }
-
-        deinit {
-            Task { @MainActor in
-                UIScreenSwizzle.deactivate()
-            }
-        }
-    }
-#endif
