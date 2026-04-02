@@ -41,10 +41,6 @@ struct PNGDataConverter {
             view.setNeedsLayout()
             view.layoutIfNeeded()
 
-            // Positioning the hosted view far off-screen avoids transient
-            // composition artifacts during snapshot rendering on recent toolchains.
-            view.frame.origin = .init(x: 10_000, y: 10_000)
-
             let renderRect = rect ?? CGRect(origin: .zero, size: targetSize)
             let format = UIGraphicsImageRendererFormat()
             format.scale = scale
@@ -52,10 +48,12 @@ struct PNGDataConverter {
             let renderer = UIGraphicsImageRenderer(size: renderRect.size, format: format)
             let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
                 ctx.cgContext.translateBy(x: -renderRect.origin.x, y: -renderRect.origin.y)
-                // `drawHierarchy(in:afterScreenUpdates:)` preserves SwiftUI-backed
-                // visual effects such as `.thinMaterial`, which are lost when the
-                // hierarchy is flattened through `layer.render(in:)`.
-                if !view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) {
+                // UIKit recommends snapshotting the entire UIWindow when visual
+                // effects are present. Falling back to the hosted view keeps
+                // older/non-scene-backed contexts working.
+                if !window.drawHierarchy(in: window.bounds, afterScreenUpdates: true),
+                    !view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
+                {
                     view.layer.render(in: ctx.cgContext)
                 }
             }

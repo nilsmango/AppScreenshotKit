@@ -23,6 +23,7 @@ struct ScreenContentView<Content: View>: View {
             content
         }
         .frame(width: model.screenSize.width, height: model.screenSize.height)
+        .clipped()
         .overlay(alignment: .top) {
             if statusBarShown {
                 HStack(spacing: 0) {
