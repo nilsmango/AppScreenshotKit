@@ -17,54 +17,61 @@ struct PNGDataConverter {
         imageFormat: AppScreenshotImageFormat = .png
     ) throws -> Data {
         #if canImport(UIKit)
-            let controller = UIHostingController(rootView: content)
-            if #available(iOS 16.4, *) {
-                controller.safeAreaRegions = []
-            }
-            let view = controller.view!
-            let targetSize = controller.view.intrinsicContentSize
-            view.bounds = CGRect(origin: .zero, size: targetSize)
-            view.backgroundColor = .clear
+            if #available(iOS 16.0, *) {
+                let renderer = ImageRenderer(content: content)
+                renderer.scale = scale
+                renderer.isOpaque = false
+                renderer.colorMode = .nonLinear
 
-            let window = UIWindow()
-            window.frame = CGRect(origin: .zero, size: targetSize)
-            window.rootViewController = controller
-            window.makeKeyAndVisible()
-
-            view.sizeToFit()
-            view.setNeedsLayout()
-            view.layoutIfNeeded()
-
-            // Move the view far off-screen before rendering.
-            // This is intentional: positioning the view away from (0, 0) avoids
-            // transient layout/animation artifacts and composition glitches that
-            // can occur when rendering SwiftUI content into a UIKit-backed window,
-            // particularly with newer Xcode / iOS toolchains (e.g. Xcode 26).
-            // Do not change this without re-validating screenshot output.
-            view.frame.origin = .init(x: 10_000, y: 10_000)
-            let format = UIGraphicsImageRendererFormat()
-            format.scale = scale
-            format.opaque = false
-
-            let rect = rect ?? CGRect(origin: .zero, size: targetSize)
-            let renderer = UIGraphicsImageRenderer(size: rect.size, format: format)
-            let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
-                ctx.cgContext.translateBy(x: -rect.origin.x, y: -rect.origin.y)
-                // `drawHierarchy(in:afterScreenUpdates:)` preserves SwiftUI-backed
-                // visual effects such as `.thinMaterial`, which are lost when the
-                // hierarchy is flattened through `layer.render(in:)`.
-                if !view.drawHierarchy(in: view.bounds, afterScreenUpdates: true) {
-                    view.layer.render(in: ctx.cgContext)
+                guard let uiImage = renderer.uiImage else {
+                    return Data()
                 }
-            }
-            switch imageFormat {
-            case .png:
-                return renderer.pngData(actions: render)
-            case .jpeg:
-                return renderer.jpegData(
-                    withCompressionQuality: imageFormat.clampedCompressionQuality,
-                    actions: render
-                )
+
+                return try imageData(from: uiImage, rect: rect, imageFormat: imageFormat)
+            } else {
+                let controller = UIHostingController(rootView: content)
+                if #available(iOS 16.4, *) {
+                    controller.safeAreaRegions = []
+                }
+                let view = controller.view!
+                let targetSize = controller.view.intrinsicContentSize
+                view.bounds = CGRect(origin: .zero, size: targetSize)
+                view.backgroundColor = .clear
+
+                let window = UIWindow()
+                window.frame = CGRect(origin: .zero, size: targetSize)
+                if let scene = UIApplication.shared.connectedScenes
+                    .compactMap({ $0 as? UIWindowScene })
+                    .first(where: { $0.activationState != .unattached })
+                {
+                    window.windowScene = scene
+                }
+                window.rootViewController = controller
+                window.makeKeyAndVisible()
+
+                view.sizeToFit()
+                view.setNeedsLayout()
+                view.layoutIfNeeded()
+
+                let format = UIGraphicsImageRendererFormat()
+                format.scale = scale
+                format.opaque = false
+
+                let renderRect = rect ?? CGRect(origin: .zero, size: targetSize)
+                let renderer = UIGraphicsImageRenderer(size: renderRect.size, format: format)
+                let render: (UIGraphicsImageRendererContext) -> Void = { ctx in
+                    ctx.cgContext.translateBy(x: -renderRect.origin.x, y: -renderRect.origin.y)
+                    _ = view.drawHierarchy(in: view.bounds, afterScreenUpdates: true)
+                }
+                switch imageFormat {
+                case .png:
+                    return renderer.pngData(actions: render)
+                case .jpeg:
+                    return renderer.jpegData(
+                        withCompressionQuality: imageFormat.clampedCompressionQuality,
+                        actions: render
+                    )
+                }
             }
         #elseif canImport(AppKit)
             let view = NSHostingView(rootView: content)
@@ -91,4 +98,37 @@ struct PNGDataConverter {
             return data
         #endif
     }
+
+    #if canImport(UIKit)
+        private func imageData(
+            from image: UIImage,
+            rect: CGRect?,
+            imageFormat: AppScreenshotImageFormat
+        ) throws -> Data {
+            let sourceImage = try croppedImage(from: image, rect: rect)
+            switch imageFormat {
+            case .png:
+                return sourceImage.pngData() ?? Data()
+            case .jpeg:
+                return sourceImage.jpegData(
+                    compressionQuality: imageFormat.clampedCompressionQuality
+                ) ?? Data()
+            }
+        }
+
+        private func croppedImage(from image: UIImage, rect: CGRect?) throws -> UIImage {
+            guard let rect else { return image }
+            guard let cgImage = image.cgImage else { return image }
+
+            let cropRect = CGRect(
+                x: rect.origin.x * image.scale,
+                y: rect.origin.y * image.scale,
+                width: rect.size.width * image.scale,
+                height: rect.size.height * image.scale
+            ).integral
+
+            guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return image }
+            return UIImage(cgImage: croppedCGImage, scale: image.scale, orientation: .up)
+        }
+    #endif
 }
