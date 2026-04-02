@@ -62,11 +62,17 @@ import SwiftUI
         }
 
         private func activateUIScreenSwizzle(environment: EnvironmentValues) {
-            UIScreenSwizzle.activate(environment.deviceModel.screenSize)
+            UIScreenSwizzle.activate(
+                environment.deviceModel.screenSize,
+                idiom: uiUserInterfaceIdiom(from: environment.deviceModel.deviceCategory)
+            )
         }
 
         private func updateUIScreenSwizzle(environment: EnvironmentValues) {
-            UIScreenSwizzle.update(environment.deviceModel.screenSize)
+            UIScreenSwizzle.update(
+                environment.deviceModel.screenSize,
+                idiom: uiUserInterfaceIdiom(from: environment.deviceModel.deviceCategory)
+            )
         }
 
         private func applyNavBarMargins(from view: UIView) {
@@ -102,5 +108,14 @@ import SwiftUI
             bottom: insets.bottom,
             right: insets.trailing
         )
+    }
+
+    func uiUserInterfaceIdiom(from category: DeviceCategory) -> UIUserInterfaceIdiom {
+        switch category {
+        case .iPhone:
+            .phone
+        case .iPad:
+            .pad
+        }
     }
 #endif

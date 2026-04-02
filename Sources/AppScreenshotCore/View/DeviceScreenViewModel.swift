@@ -14,10 +14,14 @@ protocol DeviceScreenViewModel {
     var safeAreaInsets: EdgeInsets { get }
     var horizontalSizeClass: UserInterfaceSizeClass { get }
     var verticalSizeClass: UserInterfaceSizeClass { get }
+    var deviceCategory: DeviceCategory { get }
 }
 
 /// Extension that can not be estimated from Bezel Image
 extension AppScreenshotDevice: DeviceScreenViewModel {
+    var deviceCategory: DeviceCategory {
+        model.category
+    }
 
     var screenSize: CGSize {
         switch model {

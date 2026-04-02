@@ -60,6 +60,24 @@ import XCTest
         }
 
         @MainActor
+        func testPreviewUsesScreenshotDeviceIdiomInsteadOfOuterPreviewDevice() throws {
+            let image = try renderedPreviewImage(of: PreviewIdiomScreenshot.preview())
+
+            let redCoverage = image.fractionOfPixels(
+                matching: { rgba in
+                    rgba.alpha > 200 && rgba.red > 200 && rgba.green < 80 && rgba.blue < 80
+                },
+                in: CGRect(x: 0.25, y: 0.25, width: 0.5, height: 0.5)
+            )
+
+            XCTAssertGreaterThan(
+                redCoverage,
+                0.4,
+                "Expected iPhone screenshot previews to report `.phone` for UIDevice.current.userInterfaceIdiom."
+            )
+        }
+
+        @MainActor
         private func renderedPreviewImage<Content: View>(of view: Content) throws -> UIImage {
             let data = try PNGDataConverter().convert(view)
             return try XCTUnwrap(UIImage(data: data))
@@ -109,6 +127,26 @@ import XCTest
                     .padding(.bottom, 12)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+    }
+
+    @AppScreenshot(
+        .iPhone69Inch(
+            model: .iPhone16Plus(orientation: .portrait),
+            size: .w1290h2796
+        )
+    )
+    private struct PreviewIdiomScreenshot: View {
+        var body: some View {
+            DeviceView {
+                Group {
+                    if UIDevice.current.userInterfaceIdiom == .phone {
+                        Color.red
+                    } else {
+                        Color.blue
+                    }
+                }
             }
         }
     }

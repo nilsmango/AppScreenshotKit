@@ -81,37 +81,56 @@ struct ScreenContentView<Content: View>: View {
     /// `UIScreen.main.bounds.size` gets the correct device dimensions.
     final class UIScreenSwizzle: NSObject, @unchecked Sendable {
         static let shared = UIScreenSwizzle()
-        nonisolated(unsafe) private static var originalImp: IMP?
+        nonisolated(unsafe) private static var originalBoundsImp: IMP?
+        nonisolated(unsafe) private static var originalIdiomImp: IMP?
         nonisolated(unsafe) private static var mainBoundsOverride: CGSize?
+        nonisolated(unsafe) private static var userInterfaceIdiomOverride: UIUserInterfaceIdiom?
         private let lock = NSLock()
         private var refCount = 0
 
-        nonisolated(unsafe) static let swizzleBlock: @convention(block) (UIScreen) -> CGRect = {
+        nonisolated(unsafe) static let boundsSwizzleBlock: @convention(block) (UIScreen) -> CGRect = {
             screen in
             if let override = mainBoundsOverride {
                 return CGRect(origin: .zero, size: override)
             }
-            let fn = unsafeBitCast(originalImp, to: (@convention(c) (UIScreen, Selector) -> CGRect).self)
+            let fn = unsafeBitCast(
+                originalBoundsImp,
+                to: (@convention(c) (UIScreen, Selector) -> CGRect).self
+            )
             return fn(screen, #selector(getter: UIScreen.bounds))
         }
 
+        nonisolated(unsafe) static let idiomSwizzleBlock: @convention(block) (UIDevice) -> UIUserInterfaceIdiom = {
+            device in
+            if let override = userInterfaceIdiomOverride {
+                return override
+            }
+            let fn = unsafeBitCast(
+                originalIdiomImp,
+                to: (@convention(c) (UIDevice, Selector) -> UIUserInterfaceIdiom).self
+            )
+            return fn(device, #selector(getter: UIDevice.userInterfaceIdiom))
+        }
+
         @MainActor
-        static func activate(_ screenSize: CGSize) {
+        static func activate(_ screenSize: CGSize, idiom: UIUserInterfaceIdiom) {
             shared.lock.lock()
             shared.refCount += 1
             let isFirst = shared.refCount == 1
             shared.lock.unlock()
 
             mainBoundsOverride = screenSize
+            userInterfaceIdiomOverride = idiom
             if isFirst {
                 setup()
             }
         }
 
         @MainActor
-        static func update(_ screenSize: CGSize) {
+        static func update(_ screenSize: CGSize, idiom: UIUserInterfaceIdiom) {
             mainBoundsOverride = screenSize
-            if originalImp == nil {
+            userInterfaceIdiomOverride = idiom
+            if originalBoundsImp == nil || originalIdiomImp == nil {
                 setup()
             }
         }
@@ -125,28 +144,46 @@ struct ScreenContentView<Content: View>: View {
             shared.lock.unlock()
 
             mainBoundsOverride = nil
+            userInterfaceIdiomOverride = nil
             if shouldTeardown {
                 teardown()
             }
         }
 
         private static func setup() {
-            guard let method = class_getInstanceMethod(
+            guard let boundsMethod = class_getInstanceMethod(
                 UIScreen.self,
                 #selector(getter: UIScreen.bounds)
-            ) else { return }
-            originalImp = method_getImplementation(method)
-            let block = imp_implementationWithBlock(swizzleBlock)
-            method_setImplementation(method, block)
+            ),
+                let idiomMethod = class_getInstanceMethod(
+                    UIDevice.self,
+                    #selector(getter: UIDevice.userInterfaceIdiom)
+                )
+            else { return }
+            originalBoundsImp = method_getImplementation(boundsMethod)
+            originalIdiomImp = method_getImplementation(idiomMethod)
+            let boundsBlock = imp_implementationWithBlock(boundsSwizzleBlock)
+            let idiomBlock = imp_implementationWithBlock(idiomSwizzleBlock)
+            method_setImplementation(boundsMethod, boundsBlock)
+            method_setImplementation(idiomMethod, idiomBlock)
         }
 
         private static func teardown() {
-            guard let method = class_getInstanceMethod(
+            guard let boundsMethod = class_getInstanceMethod(
                 UIScreen.self,
                 #selector(getter: UIScreen.bounds)
-            ), let orig = originalImp else { return }
-            method_setImplementation(method, orig)
-            originalImp = nil
+            ),
+                let idiomMethod = class_getInstanceMethod(
+                    UIDevice.self,
+                    #selector(getter: UIDevice.userInterfaceIdiom)
+                ),
+                let originalBoundsImp,
+                let originalIdiomImp
+            else { return }
+            method_setImplementation(boundsMethod, originalBoundsImp)
+            method_setImplementation(idiomMethod, originalIdiomImp)
+            self.originalBoundsImp = nil
+            self.originalIdiomImp = nil
         }
     }
 #endif

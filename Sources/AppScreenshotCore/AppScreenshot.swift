@@ -39,7 +39,10 @@ extension AppScreenshot {
     @ViewBuilder
     private static func screenshotRootView(environment: AppScreenshotEnvironment) -> some View {
         #if canImport(UIKit)
-            UIScreenBoundsBootstrap(screenSize: environment.device.screenSize) {
+            UIScreenBoundsBootstrap(
+                screenSize: environment.device.screenSize,
+                idiom: uiUserInterfaceIdiom(from: environment.device.model.category)
+            ) {
                 screenshotBodyView(environment: environment)
             }
         #else
@@ -74,8 +77,10 @@ extension AppScreenshot {
         @StateObject private var token: UIScreenBoundsToken
         let content: Content
 
-        init(screenSize: CGSize, @ViewBuilder content: () -> Content) {
-            _token = StateObject(wrappedValue: UIScreenBoundsToken(screenSize: screenSize))
+        init(screenSize: CGSize, idiom: UIUserInterfaceIdiom, @ViewBuilder content: () -> Content) {
+            _token = StateObject(
+                wrappedValue: UIScreenBoundsToken(screenSize: screenSize, idiom: idiom)
+            )
             self.content = content()
         }
 
@@ -86,8 +91,8 @@ extension AppScreenshot {
 
     @MainActor
     final class UIScreenBoundsToken: ObservableObject {
-        init(screenSize: CGSize) {
-            UIScreenSwizzle.activate(screenSize)
+        init(screenSize: CGSize, idiom: UIUserInterfaceIdiom) {
+            UIScreenSwizzle.activate(screenSize, idiom: idiom)
         }
 
         deinit {
