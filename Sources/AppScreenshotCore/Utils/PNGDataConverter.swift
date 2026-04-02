@@ -7,6 +7,10 @@
 
 import SwiftUI
 
+#if canImport(UIKit)
+    import QuartzCore
+#endif
+
 @MainActor
 struct PNGDataConverter {
     /// Convert a SwiftUI view to image data in the specified format
@@ -24,6 +28,7 @@ struct PNGDataConverter {
             let view = controller.view!
             let targetSize = controller.view.intrinsicContentSize
             view.bounds = CGRect(origin: .zero, size: targetSize)
+            view.frame = CGRect(origin: .zero, size: targetSize)
             view.backgroundColor = .clear
 
             let window = UIWindow()
@@ -40,6 +45,15 @@ struct PNGDataConverter {
             view.sizeToFit()
             view.setNeedsLayout()
             view.layoutIfNeeded()
+            window.setNeedsLayout()
+            window.layoutIfNeeded()
+
+            // Give UIKit's render server a chance to commit the visual-effect tree
+            // before snapshotting; otherwise drawHierarchy can fail and material
+            // falls back to layer.render(in:), which drops the effect entirely.
+            CATransaction.flush()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            CATransaction.flush()
 
             let renderRect = rect ?? CGRect(origin: .zero, size: targetSize)
             let format = UIGraphicsImageRendererFormat()
