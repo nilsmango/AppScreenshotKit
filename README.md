@@ -110,6 +110,19 @@ func exportScreenshots() throws {
 
 Run the test target on an iOS simulator.
 
+## Rendering limitations
+
+This branch is the last known stable configuration before the later material/glass rendering experiments.
+
+For normal screenshot generation, it still works well and is the recommended version to use.
+The remaining known issue is with compositor-backed system UI that depends on a live screenshot/compositing pass:
+
+- iOS glass effects are not exported reliably
+- standard `NavigationStack` / system navigation bars are not exported reliably
+
+In other words, this is mainly a screenshot-capture limitation, not a general failure of the package.
+If your project does not depend on glass rendering or perfectly reproduced system nav bars, this version should still be a good fit.
+
 ## Customization
 
 <details>
