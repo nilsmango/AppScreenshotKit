@@ -128,6 +128,157 @@ Run the test target on an iOS simulator.
 
 Screenshots are captured using `UIWindowScene` + `drawHierarchy` on UIKit, which correctly renders glass effects, navigation bars, and system UI. When views are larger than the physical screen, they are scaled to fit and then resized to the target pixel dimensions.
 
+## Setup Guide: Using in Your App
+
+This guide shows how to integrate AppScreenshotKit into an Xcode app project. The recommended setup uses **two targets**:
+
+### Target Structure
+
+| Target | Type | Purpose |
+|--------|------|---------|
+| **MyApp Screenshots** | Regular (iOS) | Screenshot view definitions + previews |
+| **MyAppScreenshotTests** | Unit Test (iOS) | Export test that renders and saves PNGs |
+
+### Why Two Targets?
+
+- The **Screenshots target** is a regular iOS target (not a test target). This lets you use Xcode previews for your screenshot views — you get instant visual feedback while designing.
+- The **Export test target** is a unit test target. It runs your screenshot definitions through the full rendering pipeline and writes PNG files to disk. Run it on an iOS simulator to produce real App Store-ready images.
+
+### Step 1: Add the Package
+
+In Xcode: **File → Add Package Dependencies** → paste the package URL.
+
+Then add the products to your targets:
+
+- **MyApp Screenshots** target → add `AppScreenshotKit`
+- **MyAppScreenshotTests** target → add `AppScreenshotKitTestTools`
+
+Both targets should also depend on your main app target (so screenshot views can import your app's UI).
+
+### Step 2: Create the Screenshots Target
+
+Create a new **iOS → App** target (or a simple framework target) called something like `MyApp Screenshots`.
+
+Create a shared options file:
+
+```swift
+// Screenshots/ScreenshotOptions.swift
+#if os(iOS)
+import AppScreenshotKit
+
+let screenshotLocales: AppScreenshotConfiguration.Option = .locale([
+    Locale(identifier: "en"),
+    Locale(identifier: "de"),
+    Locale(identifier: "ja"),
+])
+#endif
+```
+
+Define your screenshot views. Each one conforms to `View` + `AppScreenshot`:
+
+```swift
+// Screenshots/Phone01MainScreen.swift
+#if os(iOS)
+import AppScreenshotKit
+import SwiftUI
+
+struct Phone01MainScreen: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        AppScreenshotConfiguration(.iPhone69Inch(size: .w1290h2796), options: screenshotLocales)
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
+    @Environment(\.appScreenshotEnvironment) var environment
+
+    var body: some View {
+        VStack(spacing: 32) {
+            Text("My App Title")
+                .font(.system(size: 120, weight: .bold))
+
+            DeviceView {
+                MyMainScreenView()
+            }
+            .frame(height: environment.screenshotSize.height * 0.72)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+#Preview {
+    Phone01MainScreen.preview()
+}
+#endif
+```
+
+The `body(environment:)` implementation is always the same 3 lines — copy it into every screenshot struct. It creates an instance and injects the screenshot environment.
+
+Use `#Preview` to get live Xcode previews of your marketing layout.
+
+### Step 3: Create the Export Test Target
+
+Create a new **iOS → Unit Testing Bundle** target called `MyAppScreenshotTests`.
+
+It must depend on both `AppScreenshotKitTestTools` and your screenshots target:
+
+```swift
+// MyAppScreenshotTests/ExportScreenshots.swift
+import AppScreenshotKitTestTools
+import Foundation
+import Testing
+@testable import MyApp_Screenshots
+
+@Test @MainActor
+func exportScreenshots() throws {
+    let output = URL(fileURLWithPath: "/path/to/App Store Metadata/Screenshots")
+    let exporter = AppScreenshotExporter(option: .file(outputURL: output))
+
+    try exporter.export(Phone01MainScreen.self)
+    try exporter.export(Phone02Features.self)
+    try exporter.export(Phone03Settings.self)
+}
+```
+
+If a specific screenshot needs more time to render (complex views, async loading):
+
+```swift
+try exporter.export(Phone08Stats.self, captureDelay: 3.0)
+```
+
+### Step 4: Run the Export
+
+1. Select the **MyAppScreenshotTests** scheme
+2. Choose an **iOS simulator** as the destination
+3. Run the test (Cmd+U)
+
+PNGs are written to your output directory, organized by locale and device:
+
+```
+Screenshots/
+├── en/
+│   └── iPhone_6_9_inch/
+│       ├── Phone01MainScreen.png
+│       ├── Phone02Features.png
+│       └── Phone03Settings.png
+├── de/
+│   └── iPhone_6_9_inch/
+│       └── ...
+└── ja/
+    └── iPhone_6_9_inch/
+        └── ...
+```
+
+### Tips
+
+- **Iterate visually** with `#Preview` in the Screenshots target — no simulator needed
+- **Export final images** by running the test target on simulator
+- **Comment out lines** in the export test to re-export just one screenshot
+- **Multiple locales** are generated automatically from your configuration options
+- **iPad screenshots** use the same pattern — just add `.iPad130Inch()` to the configuration
+
 ## Customization
 
 <details>
