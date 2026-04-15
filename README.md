@@ -343,6 +343,11 @@ The CLI fetches Apple's official device images and stores them in the system cac
 swift run Project7IIIScreenshotsCLI download-bezel-image
 ```
 
+> Run from the package directory, or use `--package-path` from anywhere:
+> ```bash
+> swift run --package-path /path/to/project7III-Screenshots Project7IIIScreenshotsCLI download-bezel-image
+> ```
+
 Custom output path:
 
 ```bash
