@@ -30,7 +30,7 @@ struct PNGDataConverter {
     }
 }
 
-    #if canImport(UIKit)
+#if canImport(UIKit)
     extension PNGDataConverter {
         fileprivate func convertUIKit<Content: View>(
             _ content: Content,
@@ -65,23 +65,22 @@ struct PNGDataConverter {
 
             let screenScale = keyWindowScene?.screen.scale ?? UIScreen.main.scale
             let screenSize = keyWindowScene?.screen.bounds.size ?? UIScreen.main.bounds.size
-                let scaleFactorX = screenSize.width / resolvedSize.width
-                let scaleFactorY = screenSize.height / resolvedSize.height
-                let fitScale = min(scaleFactorX, scaleFactorY) * (1.0 + 2.0 / screenSize.height)
+
+            let viewFitsScreen = resolvedSize.width <= screenSize.width
+                && resolvedSize.height <= screenSize.height
 
             view.frame = CGRect(origin: .zero, size: resolvedSize)
-            view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
             view.setNeedsLayout()
             view.layoutIfNeeded()
 
             let captureRect = rect ?? CGRect(origin: .zero, size: resolvedSize)
 
-            if let keyWindowScene {
+            if let keyWindowScene, viewFitsScreen {
                 let hiddenWindows = keyWindowScene.windows.filter { !$0.isHidden }
                 hiddenWindows.forEach { $0.isHidden = true }
 
                 let renderWindow = UIWindow(windowScene: keyWindowScene)
-                renderWindow.frame = CGRect(origin: .zero, size: screenSize)
+                renderWindow.frame = CGRect(origin: .zero, size: resolvedSize)
                 renderWindow.backgroundColor = .systemBackground
                 renderWindow.rootViewController = controller
                 renderWindow.isHidden = false
@@ -94,10 +93,10 @@ struct PNGDataConverter {
                 }
 
                 let rendererFormat = UIGraphicsImageRendererFormat()
-                rendererFormat.scale = screenScale
+                rendererFormat.scale = scale
                 rendererFormat.opaque = false
 
-                let renderer = UIGraphicsImageRenderer(size: screenSize, format: rendererFormat)
+                let renderer = UIGraphicsImageRenderer(size: resolvedSize, format: rendererFormat)
                 let data: Data
                 switch imageFormat {
                 case .png:
@@ -114,47 +113,96 @@ struct PNGDataConverter {
 
                 renderWindow.isHidden = true
                 hiddenWindows.forEach { $0.isHidden = false }
-
-                if fitScale != 1.0 {
-                    guard let sourceImage = UIImage(data: data),
-                        let cgSource = sourceImage.cgImage
-                    else { return data }
-                    let targetPixelSize = CGSize(
-                        width: captureRect.size.width * scale,
-                        height: captureRect.size.height * scale
-                    )
-                    guard let scaledImage = cgSource.resized(to: targetPixelSize),
-                        let scaledData = scaledImage.pngData()
-                    else { return data }
-                    return scaledData
-                }
-
                 return data
-            } else {
-                for _ in 0..<20 {
+            }
+
+            if let keyWindowScene {
+                let hiddenWindows = keyWindowScene.windows.filter { !$0.isHidden }
+                hiddenWindows.forEach { $0.isHidden = true }
+
+                let scaleFactorX = screenSize.width / resolvedSize.width
+                let scaleFactorY = screenSize.height / resolvedSize.height
+                let fitScale = min(scaleFactorX, scaleFactorY)
+
+                let renderWindow = UIWindow(windowScene: keyWindowScene)
+                renderWindow.frame = CGRect(origin: .zero, size: screenSize)
+                renderWindow.backgroundColor = .systemBackground
+                renderWindow.rootViewController = controller
+                renderWindow.isHidden = false
+                renderWindow.makeKeyAndVisible()
+
+                view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
+
+                for _ in 0..<30 {
                     RunLoop.main.run(until: Date().addingTimeInterval(0.05))
                     view.setNeedsLayout()
                     view.layoutIfNeeded()
                 }
 
                 let rendererFormat = UIGraphicsImageRendererFormat()
-                rendererFormat.scale = scale
+                rendererFormat.scale = screenScale
                 rendererFormat.opaque = false
 
-                let renderer = UIGraphicsImageRenderer(size: captureRect.size, format: rendererFormat)
+                let renderer = UIGraphicsImageRenderer(size: screenSize, format: rendererFormat)
+                let capturedData: Data
                 switch imageFormat {
                 case .png:
-                    return renderer.pngData { ctx in
-                        ctx.cgContext.translateBy(x: -captureRect.origin.x, y: -captureRect.origin.y)
-                        view.layer.render(in: ctx.cgContext)
+                    capturedData = renderer.pngData { ctx in
+                        renderWindow.drawHierarchy(in: renderWindow.bounds, afterScreenUpdates: true)
                     }
                 case .jpeg:
-                    return renderer.jpegData(
+                    capturedData = renderer.jpegData(
                         withCompressionQuality: imageFormat.clampedCompressionQuality
                     ) { ctx in
-                        ctx.cgContext.translateBy(x: -captureRect.origin.x, y: -captureRect.origin.y)
-                        view.layer.render(in: ctx.cgContext)
+                        renderWindow.drawHierarchy(in: renderWindow.bounds, afterScreenUpdates: true)
                     }
+                }
+
+                renderWindow.isHidden = true
+                hiddenWindows.forEach { $0.isHidden = false }
+
+                let targetPixelSize = CGSize(
+                    width: captureRect.size.width * scale,
+                    height: captureRect.size.height * scale
+                )
+                guard let sourceImage = UIImage(data: capturedData),
+                    let cgSource = sourceImage.cgImage,
+                    let scaledImage = cgSource.resized(to: targetPixelSize)
+                else { return capturedData }
+
+                switch imageFormat {
+                case .png:
+                    return scaledImage.pngData() ?? capturedData
+                case .jpeg:
+                    return UIImage(cgImage: scaledImage).jpegData(
+                        compressionQuality: imageFormat.clampedCompressionQuality
+                    ) ?? capturedData
+                }
+            }
+
+            for _ in 0..<20 {
+                RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+                view.setNeedsLayout()
+                view.layoutIfNeeded()
+            }
+
+            let rendererFormat = UIGraphicsImageRendererFormat()
+            rendererFormat.scale = scale
+            rendererFormat.opaque = false
+
+            let renderer = UIGraphicsImageRenderer(size: captureRect.size, format: rendererFormat)
+            switch imageFormat {
+            case .png:
+                return renderer.pngData { ctx in
+                    ctx.cgContext.translateBy(x: -captureRect.origin.x, y: -captureRect.origin.y)
+                    view.layer.render(in: ctx.cgContext)
+                }
+            case .jpeg:
+                return renderer.jpegData(
+                    withCompressionQuality: imageFormat.clampedCompressionQuality
+                ) { ctx in
+                    ctx.cgContext.translateBy(x: -captureRect.origin.x, y: -captureRect.origin.y)
+                    view.layer.render(in: ctx.cgContext)
                 }
             }
         }
