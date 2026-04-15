@@ -1,4 +1,4 @@
-import AppScreenshotKitTestTools
+import Project7IIIScreenshotTestTools
 import Testing
 
 @testable import Demo

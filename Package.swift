@@ -3,7 +3,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "AppScreenshotKit",
+    name: "Project7IIIScreenshots",
     defaultLocalization: "en",
     platforms: [
         .iOS(.v16),
@@ -11,32 +11,32 @@ let package = Package(
     ],
     products: [
         .library(
-            name: "AppScreenshotKit",
-            targets: ["AppScreenshotKit"]
+            name: "Project7IIIScreenshots",
+            targets: ["Project7IIIScreenshots"]
         ),
         .library(
-            name: "AppScreenshotKitTestTools",
-            targets: ["AppScreenshotKitTestTools"]
+            name: "Project7IIIScreenshotTestTools",
+            targets: ["Project7IIIScreenshotTestTools"]
         ),
         .executable(
-            name: "AppScreenshotKitCLI",
-            targets: ["AppScreenshotKitCLI"]
+            name: "Project7IIIScreenshotsCLI",
+            targets: ["Project7IIIScreenshotsCLI"]
         ),
     ],
     targets: [
         .target(
-            name: "AppScreenshotKit",
+            name: "Project7IIIScreenshots",
             dependencies: [
-                "AppScreenshotCore"
+                "Project7IIIScreenshotCore"
             ]
         ),
         .target(
-            name: "AppScreenshotCore"
+            name: "Project7IIIScreenshotCore"
         ),
         .target(
-            name: "AppScreenshotKitTestTools",
+            name: "Project7IIIScreenshotTestTools",
             dependencies: [
-                "AppScreenshotKit"
+                "Project7IIIScreenshots"
             ],
             resources: [
                 .process("Resources")
@@ -46,23 +46,23 @@ let package = Package(
             ]
         ),
         .executableTarget(
-            name: "AppScreenshotKitCLI"
+            name: "Project7IIIScreenshotsCLI"
         ),
         .plugin(
             name: "RegisterBezelsCommand",
             capability: .buildTool()
         ),
         .testTarget(
-            name: "AppScreenshotKitTests",
-            dependencies: ["AppScreenshotKit", "AppScreenshotCore"]
+            name: "Project7IIIScreenshotsTests",
+            dependencies: ["Project7IIIScreenshots", "Project7IIIScreenshotCore"]
         ),
         .testTarget(
-            name: "AppScreenshotKitTestToolsTests",
-            dependencies: ["AppScreenshotKitTestTools"]
+            name: "Project7IIIScreenshotTestToolsTests",
+            dependencies: ["Project7IIIScreenshotTestTools"]
         ),
         .testTarget(
-            name: "AppScreenshotKitCLITests",
-            dependencies: ["AppScreenshotKitCLI"]
+            name: "Project7IIIScreenshotsCLITests",
+            dependencies: ["Project7IIIScreenshotsCLI"]
         ),
     ]
 )

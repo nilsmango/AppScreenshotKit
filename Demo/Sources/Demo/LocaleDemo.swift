@@ -5,7 +5,7 @@
 //  Created by Shuhei Shitamori on 2025/05/15.
 //
 
-import AppScreenshotKit
+import Project7IIIScreenshots
 import SwiftUI
 
 @AppScreenshot(.iPhone69Inch(), options: .locale([Locale(identifier: "ja_JP"), Locale(identifier: "en_US")]))

@@ -13,20 +13,20 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../AppScreenshotKit")
+        .package(path: "../../Project7IIIScreenshots")
     ],
     targets: [
         .target(
             name: "Demo",
             dependencies: [
-                .product(name: "AppScreenshotKit", package: "AppScreenshotKit")
+                .product(name: "Project7IIIScreenshots", package: "Project7IIIScreenshots")
             ]
         ),
         .testTarget(
             name: "DemoTests",
             dependencies: [
                 "Demo",
-                .product(name: "AppScreenshotKitTestTools", package: "AppScreenshotKit"),
+                .product(name: "Project7IIIScreenshotTestTools", package: "Project7IIIScreenshots"),
             ]
         ),
     ]
