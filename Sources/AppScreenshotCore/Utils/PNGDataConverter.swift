@@ -66,63 +66,19 @@ struct PNGDataConverter {
             let screenScale = keyWindowScene?.screen.scale ?? UIScreen.main.scale
             let screenSize = keyWindowScene?.screen.bounds.size ?? UIScreen.main.bounds.size
 
-            let viewFitsScreen = resolvedSize.width <= screenSize.width
-                && resolvedSize.height <= screenSize.height
-
             view.frame = CGRect(origin: .zero, size: resolvedSize)
             view.setNeedsLayout()
             view.layoutIfNeeded()
 
             let captureRect = rect ?? CGRect(origin: .zero, size: resolvedSize)
 
-            if let keyWindowScene, viewFitsScreen {
-                let hiddenWindows = keyWindowScene.windows.filter { !$0.isHidden }
-                hiddenWindows.forEach { $0.isHidden = true }
-
-                let renderWindow = UIWindow(windowScene: keyWindowScene)
-                renderWindow.frame = CGRect(origin: .zero, size: resolvedSize)
-                renderWindow.backgroundColor = .systemBackground
-                renderWindow.rootViewController = controller
-                renderWindow.isHidden = false
-                renderWindow.makeKeyAndVisible()
-
-                for _ in 0..<30 {
-                    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-                    view.setNeedsLayout()
-                    view.layoutIfNeeded()
-                }
-
-                let rendererFormat = UIGraphicsImageRendererFormat()
-                rendererFormat.scale = scale
-                rendererFormat.opaque = false
-
-                let renderer = UIGraphicsImageRenderer(size: resolvedSize, format: rendererFormat)
-                let data: Data
-                switch imageFormat {
-                case .png:
-                    data = renderer.pngData { ctx in
-                        renderWindow.drawHierarchy(in: renderWindow.bounds, afterScreenUpdates: true)
-                    }
-                case .jpeg:
-                    data = renderer.jpegData(
-                        withCompressionQuality: imageFormat.clampedCompressionQuality
-                    ) { ctx in
-                        renderWindow.drawHierarchy(in: renderWindow.bounds, afterScreenUpdates: true)
-                    }
-                }
-
-                renderWindow.isHidden = true
-                hiddenWindows.forEach { $0.isHidden = false }
-                return data
-            }
+            let scaleFactorX = screenSize.width / resolvedSize.width
+            let scaleFactorY = screenSize.height / resolvedSize.height
+            let fitScale = min(scaleFactorX, scaleFactorY)
 
             if let keyWindowScene {
                 let hiddenWindows = keyWindowScene.windows.filter { !$0.isHidden }
                 hiddenWindows.forEach { $0.isHidden = true }
-
-                let scaleFactorX = screenSize.width / resolvedSize.width
-                let scaleFactorY = screenSize.height / resolvedSize.height
-                let fitScale = min(scaleFactorX, scaleFactorY)
 
                 let renderWindow = UIWindow(windowScene: keyWindowScene)
                 renderWindow.frame = CGRect(origin: .zero, size: screenSize)
@@ -179,6 +135,9 @@ struct PNGDataConverter {
                     ) ?? capturedData
                 }
             }
+
+            print("[AppScreenshotKit] Rendering — layer.render fallback (no window scene)")
+            view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
 
             for _ in 0..<20 {
                 RunLoop.main.run(until: Date().addingTimeInterval(0.05))
