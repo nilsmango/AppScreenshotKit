@@ -123,8 +123,16 @@ class AppScreenshotKitTestToolsTests: XCTestCase {
     }
 }
 
-@AppScreenshot
-struct TestScreenshot: View {
+struct TestScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        AppScreenshotConfiguration()
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         Text("Hello, World!")
     }

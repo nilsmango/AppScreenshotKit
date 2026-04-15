@@ -121,8 +121,16 @@ class DeviceViewComparisonTests: XCTestCase {
 
 // MARK: - Export Screenshot Types
 
-@AppScreenshot(.iPhone69Inch())
-struct NavigationTitleDeviceViewScreenshot: View {
+struct NavigationTitleDeviceViewScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             NavigationStack {
@@ -138,8 +146,16 @@ struct NavigationTitleDeviceViewScreenshot: View {
     }
 }
 
-@AppScreenshot(.iPhone69Inch())
-struct StatusBarDeviceViewScreenshot: View {
+struct StatusBarDeviceViewScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             ZStack(alignment: .top) {
@@ -158,8 +174,16 @@ struct StatusBarDeviceViewScreenshot: View {
 
 /// Shows UIScreen.main.bounds values inside DeviceView.
 /// Expected for iPhone 16 Pro Max: 440 x 956
-@AppScreenshot(.iPhone69Inch())
-struct UIScreenDeviceViewScreenshot: View {
+struct UIScreenDeviceViewScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             VStack(spacing: 20) {
@@ -223,8 +247,16 @@ extension DeviceViewComparisonTests {
 
 /// Test screenshot with multiple locales. Shows the current locale identifier
 /// so you can verify it changes between ja_JP and en_US.
-@AppScreenshot(.iPhone69Inch(), options: .locale([Locale(identifier: "ja_JP"), Locale(identifier: "en_US")]))
-struct LocaleTestScreenshot: View {
+struct LocaleTestScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch(), options: .locale([Locale(identifier: "ja_JP"), Locale(identifier: "en_US")]))
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     @Environment(\.locale) var locale
 
     var body: some View {
@@ -311,8 +343,16 @@ extension DeviceViewComparisonTests {
 }
 
 /// Renders a LazyVGrid with numbered cells inside DeviceView.
-@AppScreenshot(.iPhone69Inch())
-struct LazyVGridTestScreenshot: View {
+struct LazyVGridTestScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(80), spacing: 4), count: 4), spacing: 4) {
@@ -330,8 +370,16 @@ struct LazyVGridTestScreenshot: View {
 }
 
 /// Renders the same grid with regular VStack+HStack (non-lazy, always renders all items).
-@AppScreenshot(.iPhone69Inch())
-struct RegularGridTestScreenshot: View {
+struct RegularGridTestScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             VStack(spacing: 4) {
@@ -355,8 +403,16 @@ struct RegularGridTestScreenshot: View {
 
 /// LazyVGrid with 100 items — extends far beyond screen height.
 /// If items beyond the initial viewport are not rendered, the test catches it.
-@AppScreenshot(.iPhone69Inch())
-struct LazyVGridOverflowTestScreenshot: View {
+struct LazyVGridOverflowTestScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             LazyVGrid(columns: Array(repeating: GridItem(.fixed(80), spacing: 4), count: 4), spacing: 4) {
@@ -374,8 +430,16 @@ struct LazyVGridOverflowTestScreenshot: View {
 }
 
 /// Regular Grid with same 100 items — always renders all items (non-lazy).
-@AppScreenshot(.iPhone69Inch())
-struct RegularGridOverflowTestScreenshot: View {
+struct RegularGridOverflowTestScreenshot: View, AppScreenshot {
+    nonisolated static var configuration: AppScreenshotConfiguration {
+        .init(.iPhone69Inch())
+    }
+
+    @MainActor
+    static func body(environment: AppScreenshotEnvironment) -> some View {
+        Self().environment(\.appScreenshotEnvironment, environment)
+    }
+
     var body: some View {
         DeviceView {
             VStack(spacing: 4) {
