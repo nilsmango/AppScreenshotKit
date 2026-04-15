@@ -1,7 +1,11 @@
-# AppScreenshotKit
+# project7III Screenshots
+
+**A SwiftUI screenshot package for generating App Store screenshots**
 
 Generate App Store screenshots from SwiftUI views. Optionally render them inside Apple device frames.
 Wrap your production views in `DeviceView` so screenshots stay in sync with your current UI.
+
+> **Fork notice:** This project is a fork of [AppScreenshotKit](https://github.com/shitamori1272/AppScreenshotKit) by Shuhei Shitamori, with significant enhancements and architectural improvements.
 
 > To use Apple device frames, download the bezel assets once (see [CLI](#cli)).
 
@@ -24,7 +28,7 @@ Wrap your production views in `DeviceView` so screenshots stay in sync with your
 1. Add the package and products.
 
 ```swift
-.package(url: "https://github.com/shitamori1272/AppScreenshotKit.git", from: "0.2.0"),
+.package(url: "https://github.com/nilsmango/project7III-Screenshots.git", from: "0.3.0"),
 ```
 
 ```swift
@@ -32,7 +36,7 @@ Wrap your production views in `DeviceView` so screenshots stay in sync with your
 .target(
     name: "MyApp",
     dependencies: [
-        .product(name: "AppScreenshotKit", package: "AppScreenshotKit")
+        .product(name: "Project7IIIScreenshots", package: "Project7IIIScreenshots")
     ]
 )
 
@@ -40,7 +44,7 @@ Wrap your production views in `DeviceView` so screenshots stay in sync with your
 .testTarget(
     name: "MyAppTests",
     dependencies: [
-        .product(name: "AppScreenshotKitTestTools", package: "AppScreenshotKit")
+        .product(name: "Project7IIIScreenshotTestTools", package: "Project7IIIScreenshots")
     ]
 )
 ```
@@ -48,7 +52,7 @@ Wrap your production views in `DeviceView` so screenshots stay in sync with your
 2. (Optional) Download Apple device frames.
 
 ```bash
-swift run AppScreenshotKitCLI download-bezel-image
+swift run Project7IIIScreenshotsCLI download-bezel-image
 ```
 
 3. Define a screenshot view.
@@ -56,7 +60,7 @@ swift run AppScreenshotKitCLI download-bezel-image
 Conform your struct to both `View` and `AppScreenshot`. Provide `configuration` and `body(environment:)`:
 
 ```swift
-import AppScreenshotKit
+import Project7IIIScreenshots
 import SwiftUI
 
 struct LocaleDemo: View, AppScreenshot {
@@ -95,7 +99,7 @@ The `body(environment:)` static method is always the same 3 lines — it creates
 <summary><b>Output</b></summary>
 <div align="center">
   <img src="Demo/Screenshots/en_US/iPhone_6_9_inch/LocaleDemo.jpeg" width="45%" />
-  <img src="Demo/Screenshots/ja_JP/iPhone_6_9_inch/LocaleDemo.jpeg" width="45%" />
+  <img src="Demo/Screenshots/ja_US/iPhone_6_9_inch/LocaleDemo.jpeg" width="45%" />
 </div>
 </details>
 
@@ -110,7 +114,7 @@ The `body(environment:)` static method is always the same 3 lines — it creates
 5. Export in tests (Swift Testing).
 
 ```swift
-import AppScreenshotKitTestTools
+import Project7IIIScreenshotTestTools
 import Foundation
 import Testing
 
@@ -130,7 +134,7 @@ Screenshots are captured using `UIWindowScene` + `drawHierarchy` on UIKit, which
 
 ## Setup Guide: Using in Your App
 
-This guide shows how to integrate AppScreenshotKit into an Xcode app project. The recommended setup uses **two targets**:
+This guide shows how to integrate project7III Screenshots into an Xcode app project. The recommended setup uses **two targets**:
 
 ### Target Structure
 
@@ -150,8 +154,8 @@ In Xcode: **File → Add Package Dependencies** → paste the package URL.
 
 Then add the products to your targets:
 
-- **MyApp Screenshots** target → add `AppScreenshotKit`
-- **MyAppScreenshotTests** target → add `AppScreenshotKitTestTools`
+- **MyApp Screenshots** target → add `Project7IIIScreenshots`
+- **MyAppScreenshotTests** target → add `Project7IIIScreenshotTestTools`
 
 Both targets should also depend on your main app target (so screenshot views can import your app's UI).
 
@@ -164,7 +168,7 @@ Create a shared options file:
 ```swift
 // Screenshots/ScreenshotOptions.swift
 #if os(iOS)
-import AppScreenshotKit
+import Project7IIIScreenshots
 
 let screenshotLocales: AppScreenshotConfiguration.Option = .locale([
     Locale(identifier: "en"),
@@ -179,7 +183,7 @@ Define your screenshot views. Each one conforms to `View` + `AppScreenshot`:
 ```swift
 // Screenshots/Phone01MainScreen.swift
 #if os(iOS)
-import AppScreenshotKit
+import Project7IIIScreenshots
 import SwiftUI
 
 struct Phone01MainScreen: View, AppScreenshot {
@@ -222,11 +226,11 @@ Use `#Preview` to get live Xcode previews of your marketing layout.
 
 Create a new **iOS → Unit Testing Bundle** target called `MyAppScreenshotTests`.
 
-It must depend on both `AppScreenshotKitTestTools` and your screenshots target:
+It must depend on both `Project7IIIScreenshotTestTools` and your screenshots target:
 
 ```swift
 // MyAppScreenshotTests/ExportScreenshots.swift
-import AppScreenshotKitTestTools
+import Project7IIIScreenshotTestTools
 import Foundation
 import Testing
 @testable import MyApp_Screenshots
@@ -333,19 +337,19 @@ Output:
 ## CLI
 
 Download and register Apple bezel assets (required only if you want device frames).
-The CLI fetches Apple’s official device images and stores them in the system cache (or your custom path) so exports can render frames.
+The CLI fetches Apple's official device images and stores them in the system cache (or your custom path) so exports can render frames.
 
 ```bash
-swift run AppScreenshotKitCLI download-bezel-image
+swift run Project7IIIScreenshotsCLI download-bezel-image
 ```
 
 Custom output path:
 
 ```bash
-swift run AppScreenshotKitCLI download-bezel-image --output /path/to/custom/location
+swift run Project7IIIScreenshotsCLI download-bezel-image --output /path/to/custom/location
 ```
 
-Before using Apple’s marketing resources, review the [App Store marketing guidelines](https://developer.apple.com/app-store/marketing/guidelines/#section-products).
+Before using Apple's marketing resources, review the [App Store marketing guidelines](https://developer.apple.com/app-store/marketing/guidelines/#section-products).
 
 ## Demo
 
@@ -360,6 +364,10 @@ Run `DemoTests` in Xcode to generate sample outputs under `Demo/Screenshots`.
 
 - iOS 16+ / macOS 14+
 - Swift 6 toolchain (Xcode 16+)
+
+## Acknowledgments
+
+This package is based on [AppScreenshotKit](https://github.com/shitamori1272/AppScreenshotKit) by Shuhei Shitamori.
 
 ## License
 

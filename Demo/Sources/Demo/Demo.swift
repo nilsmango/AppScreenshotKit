@@ -1,7 +1,7 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
-import AppScreenshotKit
+import Project7IIIScreenshots
 import SwiftUI
 
 @AppScreenshot(.iPhone69Inch(), .iPad130Inch(), options: .tiles(4))

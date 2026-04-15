@@ -1,6 +1,6 @@
 //
 //  RegisterBezelsCommand.swift
-//  AppScreenshotKit
+//  Project7IIIScreenshots
 //
 //  Created by Shuhei Shitamori on 2025/05/11.
 //
@@ -16,13 +16,13 @@ struct RegisterBezelsCommand: BuildToolPlugin {
     ) async throws -> [PackagePlugin.Command] {
         let cacheDirectoryURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         let bezelsDirectoryURL = cacheDirectoryURL.appending(
-            path: "com.shitamori1272.AppScreenshotKit/AppleDesignResource"
+            path: "com.nilsmango.Project7IIIScreenshots/AppleDesignResource"
         )
         let outputDirectoryURL = context.pluginWorkDirectoryURL.appending(path: "AppleDesignResource")
 
         guard FileManager.default.fileExists(atPath: bezelsDirectoryURL.path) else {
             Diagnostics.warning(
-                "No bezels found in \(bezelsDirectoryURL.path). Please run the command to download bezels first.\n \"swift run AppScreenshotKitCLI download-bezel-image\""
+                "No bezels found in \(bezelsDirectoryURL.path). Please run the command to download bezels first.\n \"swift run Project7IIIScreenshotsCLI download-bezel-image\""
             )
 
             try FileManager.default.createDirectory(at: outputDirectoryURL, withIntermediateDirectories: true)
