@@ -74,7 +74,7 @@ struct PNGDataConverter {
 
             let scaleFactorX = screenSize.width / resolvedSize.width
             let scaleFactorY = screenSize.height / resolvedSize.height
-            let fitScale = min(scaleFactorX, scaleFactorY)
+            let fitScale = min(scaleFactorX, scaleFactorY) * 1.0025
 
             if let keyWindowScene {
                 let hiddenWindows = keyWindowScene.windows.filter { !$0.isHidden }
