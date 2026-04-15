@@ -54,7 +54,8 @@ extension AppScreenshot {
     @MainActor
     package static func export(
         resourceBaseURL: URL? = nil,
-        imageFormat: AppScreenshotImageFormat = .png
+        imageFormat: AppScreenshotImageFormat = .png,
+        captureDelay: TimeInterval = 1.5
     ) throws -> [AppScreenshotOutput] {
         return try configuration.environments().map { environment in
             let renderingStrategy: RenderingStrategy
@@ -79,7 +80,8 @@ extension AppScreenshot {
                     let imageData = try PNGDataConverter().convert(
                         content,
                         rect: rect,
-                        imageFormat: imageFormat
+                        imageFormat: imageFormat,
+                        captureDelay: captureDelay
                     )
                     return AppScreenshotOutput(
                         imageData: imageData,

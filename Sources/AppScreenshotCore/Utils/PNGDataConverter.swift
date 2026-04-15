@@ -10,14 +10,16 @@ struct PNGDataConverter {
         _ content: Content,
         rect: CGRect? = nil,
         scale: CGFloat = 1,
-        imageFormat: AppScreenshotImageFormat = .png
+        imageFormat: AppScreenshotImageFormat = .png,
+        captureDelay: TimeInterval = 1.5
     ) throws -> Data {
         #if canImport(UIKit)
             return try convertUIKit(
                 content,
                 rect: rect,
                 scale: scale,
-                imageFormat: imageFormat
+                imageFormat: imageFormat,
+                captureDelay: captureDelay
             )
         #elseif canImport(AppKit)
             return convertAppKit(
@@ -36,7 +38,8 @@ struct PNGDataConverter {
             _ content: Content,
             rect: CGRect?,
             scale: CGFloat,
-            imageFormat: AppScreenshotImageFormat
+            imageFormat: AppScreenshotImageFormat,
+            captureDelay: TimeInterval
         ) throws -> Data {
             let controller = UIHostingController(rootView: content)
             if #available(iOS 16.4, *) {
@@ -89,8 +92,10 @@ struct PNGDataConverter {
 
                 view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
 
-                for _ in 0..<30 {
-                    RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+                let pumpInterval: TimeInterval = 0.05
+                let pumpCount = max(1, Int(captureDelay / pumpInterval))
+                for _ in 0..<pumpCount {
+                    RunLoop.main.run(until: Date().addingTimeInterval(pumpInterval))
                     view.setNeedsLayout()
                     view.layoutIfNeeded()
                 }
@@ -139,8 +144,10 @@ struct PNGDataConverter {
             print("[AppScreenshotKit] Rendering — layer.render fallback (no window scene)")
             view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
 
-            for _ in 0..<20 {
-                RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            let pumpInterval: TimeInterval = 0.05
+            let pumpCount = max(1, Int(captureDelay / pumpInterval))
+            for _ in 0..<pumpCount {
+                RunLoop.main.run(until: Date().addingTimeInterval(pumpInterval))
                 view.setNeedsLayout()
                 view.layoutIfNeeded()
             }

@@ -11,6 +11,7 @@ import SwiftUI
 /// This class provides methods to export screenshots for given content types, supporting both file output and XCTest attachments.
 public class AppScreenshotExporter {
     let option: ExportOption
+    let captureDelay: TimeInterval
     var appleDesignResourceBezelURL: URL
 
     private static func resolveDefaultBezelURL() -> URL {
@@ -28,9 +29,11 @@ public class AppScreenshotExporter {
     ///
     /// - Parameter option: The export option specifying output destination and file naming rules.
     public init(
-        option: ExportOption
+        option: ExportOption,
+        captureDelay: TimeInterval = 1.5
     ) {
         self.option = option
+        self.captureDelay = captureDelay
         self.appleDesignResourceBezelURL = Self.resolveDefaultBezelURL()
     }
 
@@ -48,11 +51,14 @@ public class AppScreenshotExporter {
     /// - Throws: Errors thrown during export or file writing.
     @discardableResult
     @MainActor public func export<Content: AppScreenshot>(
-        _ content: Content.Type = Content.self
+        _ content: Content.Type = Content.self,
+        captureDelay: TimeInterval? = nil
     ) throws -> [AppScreenshotOutput] {
+        let delay = captureDelay ?? self.captureDelay
         let outputs = try Content.export(
             resourceBaseURL: appleDesignResourceBezelURL,
-            imageFormat: option.imageFormat
+            imageFormat: option.imageFormat,
+            captureDelay: delay
         )
 
         for output in outputs {
