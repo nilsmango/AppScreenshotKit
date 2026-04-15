@@ -1,7 +1,5 @@
 // swift-tools-version: 6.0
-// The swift-tools-version declares the minimum version of Swift required to build this package.
 
-import CompilerPluginSupport
 import PackageDescription
 
 let package = Package(
@@ -25,22 +23,15 @@ let package = Package(
             targets: ["AppScreenshotKitCLI"]
         ),
     ],
-    dependencies: [
-        .package(url: "https://github.com/swiftlang/swift-syntax.git", from: "601.0.0-latest")
-    ],
     targets: [
         .target(
             name: "AppScreenshotKit",
             dependencies: [
-                "AppScreenshotCore",
-                "AppScreenshotMacro",
+                "AppScreenshotCore"
             ]
         ),
         .target(
-            name: "AppScreenshotCore",
-            plugins: [
-                "SwiftFormatLintCommand"
-            ]
+            name: "AppScreenshotCore"
         ),
         .target(
             name: "AppScreenshotKitTestTools",
@@ -52,21 +43,13 @@ let package = Package(
             ],
             plugins: [
                 "RegisterBezelsCommand",
-                "SwiftFormatLintCommand",
             ]
         ),
         .executableTarget(
-            name: "AppScreenshotKitCLI",
-            plugins: [
-                "SwiftFormatLintCommand"
-            ]
+            name: "AppScreenshotKitCLI"
         ),
         .plugin(
             name: "RegisterBezelsCommand",
-            capability: .buildTool()
-        ),
-        .plugin(
-            name: "SwiftFormatLintCommand",
             capability: .buildTool()
         ),
         .testTarget(
@@ -80,20 +63,6 @@ let package = Package(
         .testTarget(
             name: "AppScreenshotKitCLITests",
             dependencies: ["AppScreenshotKitCLI"]
-        ),
-        .target(
-            name: "AppScreenshotMacro",
-            dependencies: [
-                "AppScreenshotCore",
-                "AppScreenshotMacroPlugin",
-            ]
-        ),
-        .macro(
-            name: "AppScreenshotMacroPlugin",
-            dependencies: [
-                .product(name: "SwiftCompilerPlugin", package: "swift-syntax"),
-                .product(name: "SwiftSyntaxMacros", package: "swift-syntax"),
-            ]
         ),
     ]
 )

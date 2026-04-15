@@ -8,18 +8,8 @@ import SwiftUI
 public protocol AppScreenshot {
     associatedtype Content: View
 
-    /// The configuration that defines which devices, orientations, and locales
-    /// will be used for screenshot generation.
     static var configuration: AppScreenshotConfiguration { get }
 
-    /// Builds the content view for the screenshot.
-    ///
-    /// This method is where you define the actual appearance of your screenshots.
-    /// It will be called for each device and locale combination specified in your configuration.
-    ///
-    /// - Parameter environment: The environment containing contextual information about
-    ///   the current screenshot being rendered, including device information and locale.
-    /// - Returns: A SwiftUI view that will be rendered as the screenshot.
     @MainActor static func body(environment: AppScreenshotEnvironment) -> Content
 }
 

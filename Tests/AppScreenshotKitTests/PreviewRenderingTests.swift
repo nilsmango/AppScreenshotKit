@@ -84,13 +84,21 @@ import XCTest
         }
     }
 
-    @AppScreenshot(
-        .iPhone69Inch(
-            model: .iPhone16Plus(orientation: .landscape),
-            size: .w2796h1290
-        )
-    )
-    private struct PreviewUIScreenWidthScreenshot: View {
+    private struct PreviewUIScreenWidthScreenshot: View, AppScreenshot {
+        nonisolated static var configuration: AppScreenshotConfiguration {
+            .init(
+                .iPhone69Inch(
+                    model: .iPhone16Plus(orientation: .landscape),
+                    size: .w2796h1290
+                )
+            )
+        }
+
+        @MainActor
+        static func body(environment: AppScreenshotEnvironment) -> some View {
+            Self().environment(\.appScreenshotEnvironment, environment)
+        }
+
         var body: some View {
             DeviceView {
                 VStack(spacing: 0) {
@@ -105,13 +113,21 @@ import XCTest
         }
     }
 
-    @AppScreenshot(
-        .iPhone69Inch(
-            model: .iPhone16Plus(orientation: .landscape),
-            size: .w2796h1290
-        )
-    )
-    private struct PreviewLandscapeFooterScreenshot: View {
+    private struct PreviewLandscapeFooterScreenshot: View, AppScreenshot {
+        nonisolated static var configuration: AppScreenshotConfiguration {
+            .init(
+                .iPhone69Inch(
+                    model: .iPhone16Plus(orientation: .landscape),
+                    size: .w2796h1290
+                )
+            )
+        }
+
+        @MainActor
+        static func body(environment: AppScreenshotEnvironment) -> some View {
+            Self().environment(\.appScreenshotEnvironment, environment)
+        }
+
         var body: some View {
             DeviceView {
                 VStack(spacing: 0) {
@@ -131,13 +147,21 @@ import XCTest
         }
     }
 
-    @AppScreenshot(
-        .iPhone69Inch(
-            model: .iPhone16Plus(orientation: .portrait),
-            size: .w1290h2796
-        )
-    )
-    private struct PreviewIdiomScreenshot: View {
+    private struct PreviewIdiomScreenshot: View, AppScreenshot {
+        nonisolated static var configuration: AppScreenshotConfiguration {
+            .init(
+                .iPhone69Inch(
+                    model: .iPhone16Plus(orientation: .portrait),
+                    size: .w1290h2796
+                )
+            )
+        }
+
+        @MainActor
+        static func body(environment: AppScreenshotEnvironment) -> some View {
+            Self().environment(\.appScreenshotEnvironment, environment)
+        }
+
         var body: some View {
             DeviceView {
                 Group {
