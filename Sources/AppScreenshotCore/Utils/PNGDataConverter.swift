@@ -63,15 +63,26 @@ struct PNGDataConverter {
                 .compactMap({ $0 as? UIWindowScene })
                 .first
 
+            let screenScale = keyWindowScene?.screen.scale ?? UIScreen.main.scale
+            let screenSize = keyWindowScene?.screen.bounds.size ?? UIScreen.main.bounds.size
+                let scaleFactorX = screenSize.width / resolvedSize.width
+                let scaleFactorY = screenSize.height / resolvedSize.height
+                let fitScale = min(scaleFactorX, scaleFactorY) * (1.0 + 2.0 / screenSize.height)
+
             view.frame = CGRect(origin: .zero, size: resolvedSize)
+            view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
             view.setNeedsLayout()
             view.layoutIfNeeded()
 
             let captureRect = rect ?? CGRect(origin: .zero, size: resolvedSize)
 
             if let keyWindowScene {
+                let hiddenWindows = keyWindowScene.windows.filter { !$0.isHidden }
+                hiddenWindows.forEach { $0.isHidden = true }
+
                 let renderWindow = UIWindow(windowScene: keyWindowScene)
-                renderWindow.frame = CGRect(origin: .zero, size: resolvedSize)
+                renderWindow.frame = CGRect(origin: .zero, size: screenSize)
+                renderWindow.backgroundColor = .systemBackground
                 renderWindow.rootViewController = controller
                 renderWindow.isHidden = false
                 renderWindow.makeKeyAndVisible()
@@ -83,27 +94,41 @@ struct PNGDataConverter {
                 }
 
                 let rendererFormat = UIGraphicsImageRendererFormat()
-                rendererFormat.scale = scale
+                rendererFormat.scale = screenScale
                 rendererFormat.opaque = false
 
-                let renderer = UIGraphicsImageRenderer(size: captureRect.size, format: rendererFormat)
+                let renderer = UIGraphicsImageRenderer(size: screenSize, format: rendererFormat)
                 let data: Data
                 switch imageFormat {
                 case .png:
                     data = renderer.pngData { ctx in
-                        ctx.cgContext.translateBy(x: -captureRect.origin.x, y: -captureRect.origin.y)
                         renderWindow.drawHierarchy(in: renderWindow.bounds, afterScreenUpdates: true)
                     }
                 case .jpeg:
                     data = renderer.jpegData(
                         withCompressionQuality: imageFormat.clampedCompressionQuality
                     ) { ctx in
-                        ctx.cgContext.translateBy(x: -captureRect.origin.x, y: -captureRect.origin.y)
                         renderWindow.drawHierarchy(in: renderWindow.bounds, afterScreenUpdates: true)
                     }
                 }
 
                 renderWindow.isHidden = true
+                hiddenWindows.forEach { $0.isHidden = false }
+
+                if fitScale != 1.0 {
+                    guard let sourceImage = UIImage(data: data),
+                        let cgSource = sourceImage.cgImage
+                    else { return data }
+                    let targetPixelSize = CGSize(
+                        width: captureRect.size.width * scale,
+                        height: captureRect.size.height * scale
+                    )
+                    guard let scaledImage = cgSource.resized(to: targetPixelSize),
+                        let scaledData = scaledImage.pngData()
+                    else { return data }
+                    return scaledData
+                }
+
                 return data
             } else {
                 for _ in 0..<20 {
@@ -168,6 +193,36 @@ struct PNGDataConverter {
             guard let data else { return Data() }
 
             return data
+        }
+    }
+#endif
+
+#if canImport(UIKit)
+    extension CGImage {
+        func resized(to size: CGSize) -> CGImage? {
+            guard let context = CGContext(
+                data: nil,
+                width: Int(size.width),
+                height: Int(size.height),
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            ) else { return nil }
+            context.interpolationQuality = .high
+            context.draw(self, in: CGRect(origin: .zero, size: size))
+            return context.makeImage()
+        }
+
+        func pngData() -> Data? {
+            guard let mutableData = CFDataCreateMutable(nil, 0),
+                let destination = CGImageDestinationCreateWithData(
+                    mutableData, "public.png" as CFString, 1, nil
+                )
+            else { return nil }
+            CGImageDestinationAddImage(destination, self, nil)
+            CGImageDestinationFinalize(destination)
+            return mutableData as Data
         }
     }
 #endif
