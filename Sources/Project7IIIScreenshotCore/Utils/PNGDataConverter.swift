@@ -92,13 +92,15 @@ struct PNGDataConverter {
 
                 view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
 
-                let pumpInterval: TimeInterval = 0.05
-                let pumpCount = max(1, Int(captureDelay / pumpInterval))
-                for _ in 0..<pumpCount {
-                    RunLoop.main.run(until: Date().addingTimeInterval(pumpInterval))
-                    view.setNeedsLayout()
-                    view.layoutIfNeeded()
+                let settleInterval: TimeInterval = 0.1
+                let settleCount = max(1, Int(captureDelay / settleInterval))
+                for _ in 0..<settleCount {
+                    RunLoop.main.run(until: Date().addingTimeInterval(settleInterval))
                 }
+
+                view.setNeedsLayout()
+                view.layoutIfNeeded()
+                RunLoop.main.run(until: Date().addingTimeInterval(0.5))
 
                 let rendererFormat = UIGraphicsImageRendererFormat()
                 rendererFormat.scale = screenScale
@@ -144,13 +146,15 @@ struct PNGDataConverter {
             print("[Project7IIIScreenshots] Rendering — layer.render fallback (no window scene)")
             view.transform = CGAffineTransform(scaleX: fitScale, y: fitScale)
 
-            let pumpInterval: TimeInterval = 0.05
-            let pumpCount = max(1, Int(captureDelay / pumpInterval))
-            for _ in 0..<pumpCount {
-                RunLoop.main.run(until: Date().addingTimeInterval(pumpInterval))
-                view.setNeedsLayout()
-                view.layoutIfNeeded()
+            let settleInterval: TimeInterval = 0.1
+            let settleCount = max(1, Int(captureDelay / settleInterval))
+            for _ in 0..<settleCount {
+                RunLoop.main.run(until: Date().addingTimeInterval(settleInterval))
             }
+
+            view.setNeedsLayout()
+            view.layoutIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.5))
 
             let rendererFormat = UIGraphicsImageRendererFormat()
             rendererFormat.scale = scale

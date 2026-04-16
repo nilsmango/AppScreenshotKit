@@ -283,6 +283,29 @@ Screenshots/
 - **Multiple locales** are generated automatically from your configuration options
 - **iPad screenshots** use the same pattern — just add `.iPad130Inch()` to the configuration
 
+### Async Views & Screenshot Export
+
+SwiftUI views that load data asynchronously (`Task {}` in `.onAppear`, async chart computation, map polyline data, etc.) often do not fully settle before `drawHierarchy` captures the screenshot — even with long `captureDelay` values. The RunLoop gives async work time to run, but SwiftUI's rendering pipeline may not commit the final visual state in time.
+
+Increasing `captureDelay` sometimes helps (e.g. `try exporter.export(Phone08Stats.self, captureDelay: 6)`), but for views with heavy async loading — map tiles, chart binning, route polylines — it is often not enough.
+
+**Reliable workaround:** For views shown in screenshots, precompute data synchronously in `.onAppear` when in screenshot mode. Use a flag (e.g. `DownwindManager.forcePremiumForScreenshots`) to gate the synchronous path so normal app usage stays async. This applies to:
+
+- Chart data (speed distribution bins, heart rate samples)
+- Map polyline data
+- Round/fastest-distance calculations
+- Any `@State` that would normally be populated by an async `Task`
+
+```swift
+// In your view's .onAppear:
+if downwindManager.forcePremiumForScreenshots {
+    rounds = Self.createRounds(from: statisticsData.locationData)  // sync
+    heartRateSpeedData = Self.createSpeedData(from: statisticsData.locationData)  // sync
+} else {
+    // Normal async path for production
+}
+```
+
 ## Customization
 
 <details>
