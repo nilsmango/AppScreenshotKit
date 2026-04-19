@@ -147,6 +147,7 @@ This guide shows how to integrate project7III Screenshots into an Xcode app proj
 
 - The **Screenshots target** is a regular iOS target (not a test target). This lets you use Xcode previews for your screenshot views — you get instant visual feedback while designing.
 - The **Export test target** is a unit test target. It runs your screenshot definitions through the full rendering pipeline and writes PNG files to disk. Run it on an iOS simulator to produce real App Store-ready images.
+- The **test target should be hosted by the Screenshots app target**, not by your main production app target. This is the setup that consistently works in Xcode.
 
 ### Step 1: Add the Package
 
@@ -157,11 +158,20 @@ Then add the products to your targets:
 - **MyApp Screenshots** target → add `Project7IIIScreenshots`
 - **MyAppScreenshotTests** target → add `Project7IIIScreenshotTestTools`
 
-Both targets should also depend on your main app target (so screenshot views can import your app's UI).
+The Screenshots target should include whatever app source files your screenshot views need to render.
+The test target should depend on the Screenshots target.
 
 ### Step 2: Create the Screenshots Target
 
 Create a new **iOS → App** target (or a simple framework target) called something like `MyApp Screenshots`.
+
+Important Xcode details:
+
+- Keep this as a **regular iOS app target**
+- Make sure its module name is importable as something like `MyApp_Screenshots`
+- Put your screenshot definitions in a dedicated folder such as `Screenshots/`
+- Add those screenshot files to the **Screenshots target**
+- Do not rely on the main app target being the active scheme just to make screenshot tests run
 
 Create a shared options file:
 
@@ -226,7 +236,16 @@ Use `#Preview` to get live Xcode previews of your marketing layout.
 
 Create a new **iOS → Unit Testing Bundle** target called `MyAppScreenshotTests`.
 
-It must depend on both `Project7IIIScreenshotTestTools` and your screenshots target:
+It must depend on both `Project7IIIScreenshotTestTools` and your screenshots target.
+
+Important Xcode target wiring:
+
+- Set the test target's **Target Application / Test Host** to `MyApp Screenshots`
+- `TEST_HOST` / `BUNDLE_LOADER` should point to `MyApp Screenshots.app`
+- The test target should have a **target dependency** on `MyApp Screenshots`
+- Import the screenshots module with `@testable import MyApp_Screenshots`
+
+This is the working pattern:
 
 ```swift
 // MyAppScreenshotTests/ExportScreenshots.swift
@@ -254,9 +273,15 @@ try exporter.export(Phone08Stats.self, captureDelay: 3.0)
 
 ### Step 4: Run the Export
 
-1. Select the **MyAppScreenshotTests** scheme
+1. Select the **MyAppScreenshotTests** target or scheme, or run that test directly from Xcode
 2. Choose an **iOS simulator** as the destination
 3. Run the test (Cmd+U)
+
+You do not need to keep your main production app target active. The clean setup is:
+
+- screenshot views live in `MyApp Screenshots`
+- export code lives in `MyAppScreenshotTests`
+- the test bundle is hosted by `MyApp Screenshots.app`
 
 PNGs are written to your output directory, organized by locale and device:
 
